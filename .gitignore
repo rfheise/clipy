@@ -3,4 +3,6 @@
 *.mp3
 *.srt
 *.pyc
+*.webm
 __pycache__/
+videos/
