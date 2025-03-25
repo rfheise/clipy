@@ -6,3 +6,4 @@
 *.webm
 __pycache__/
 videos/
+error_files.txt

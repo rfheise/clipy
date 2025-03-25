@@ -1,0 +1,64 @@
+from .OpenAIWhisper import OpenAIWhisper
+import os 
+import sys
+def generate_subtitles(in_dir, out_dir):
+
+    # get all files and make new directories 
+    files = get_files(in_dir, [".mp4",])
+    error_files = []
+    for f in files:
+        out_file = os.path.join(out_dir, os.path.relpath(f, in_dir))
+        out_file = os.path.splitext(out_file)[0]
+        if not os.path.exists(out_file):
+            os.makedirs(out_file)
+        try:
+            sg = OpenAIWhisper(f)
+            sg.generate_subtitles()
+            sg.to_srt(out_file + ".srt")
+            print("Subtitle File saved at: ", out_file + ".srt")
+            print()
+        except KeyboardInterrupt:
+            print("Keyboard interrupt detected. Exiting program.")
+            break
+        except Exception as e:
+            print(e)
+            error_files.append(f)
+            print("Error processing file: ", f)
+            print()
+        finally:
+            clear_temp_files()
+    if len(error_files) != 0:
+        with open("error_files.txt", "w") as f:
+            for fl in error_files:
+                f.write(fl + "\n")
+            print("Error files written to error_files.txt")
+            print()
+    clear_temp_files()
+
+def clear_temp_files():
+    for f in os.listdir("./"):
+        if f.startswith(".tmp"):
+            os.remove(os.path.join("./", f))
+    if os.path.exists("/dev/shm"):
+        for f in os.listdir("/dev/shm"):
+            if f.startswith(".tmp"):
+                os.remove(os.path.join("/dev/shm", f))
+
+def get_files(in_dir, types=None):
+    files = []
+    for f in os.listdir(in_dir):
+        f = os.path.join(in_dir, f)
+        if os.path.isdir(f):
+            files = [*files, *get_files(f, types)]
+        elif os.path.basename(f).startswith("._"):
+            continue
+        else:
+            if types:
+                if os.path.splitext(f)[1] in types:
+                    files.append(f)
+            else:
+                files.append(f)
+    return files
+
+if __name__ == "__main__":
+    generate_subtitles("./videos/shows", "./subtitles")

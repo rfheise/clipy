@@ -2,20 +2,29 @@
 
 class TimeStamps():
 
-    def __init__(self, timestamps = []):
-        self.timestamps = timestamps
-    
-    def from_ints(integer_timestamps):
-        ts = TimeStamps()
+    def __init__(self, timestamps = None):
+        if timestamps is None:
+            self.timestamps = []
+        else:
+            self.timestamps = timestamps
+
+    @classmethod
+    def from_ints(cls,integer_timestamps):
+        ts = cls()
         for t in integer_timestamps:
             ts.add_timestamp(Timestamp(t[0], t[1]))
-    
-    def from_times(start,end):
-        return TimeStamps([Timestamp(start, end)])
-        
+        return ts
+    @classmethod
+    def from_times(cls,start,end):
+        return cls([Timestamp(start, end)])
+    def __len__(self):
+        return len(self.timestamps)
     @property
     def start(self):
         return self.timestamps[0].start
+    
+    def __iter__(self):
+        return iter(self.timestamps)
     
     @property
     def end(self):
