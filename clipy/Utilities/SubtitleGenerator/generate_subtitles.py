@@ -1,7 +1,9 @@
 from .OpenAIWhisper import OpenAIWhisper
 import os 
 import sys
-def generate_subtitles(in_dir, out_dir):
+import time 
+
+def generate_subtitles(in_dir, out_dir, model="tiny.en"):
 
     # get all files and make new directories 
     files = get_files(in_dir, [".mp4",])
@@ -10,9 +12,9 @@ def generate_subtitles(in_dir, out_dir):
         out_file = os.path.join(out_dir, os.path.relpath(f, in_dir))
         out_file = os.path.splitext(out_file)[0]
         if not os.path.exists(out_file):
-            os.makedirs(out_file)
+            os.makedirs(os.path.dirname(out_file),exist_ok=True)
         try:
-            sg = OpenAIWhisper(f)
+            sg = OpenAIWhisper(f, model_name=model, subtitle_interval=30)
             sg.generate_subtitles()
             sg.to_srt(out_file + ".srt")
             print("Subtitle File saved at: ", out_file + ".srt")
@@ -61,4 +63,10 @@ def get_files(in_dir, types=None):
     return files
 
 if __name__ == "__main__":
-    generate_subtitles("./videos/shows", "./subtitles")
+    models = ["tiny.en","base.en","small.en","medium.en","large","turbo"]
+    with open("./subtitles/model-times.txt", "w") as f:
+        start = time.time()
+        for model in models:
+            generate_subtitles("./videos/viral", f"./subtitles/{model}", model=model)
+        end = time.time()
+        f.write(f"{model}:{end - start}\n")

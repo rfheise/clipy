@@ -32,6 +32,7 @@ class SubtitleGenerator():
         timestamps = [[i, i+self.subtitle_interval] for i in range(0, int(duration), self.subtitle_interval)]
         timestamps[-1][1] = duration
         timestamps = TimeStamps.from_ints(timestamps) 
+        # generate segments 
         for t in tqdm(timestamps, total=len(timestamps)):
             out = self.generate_subtitle_segment(t)
             self.add_subtitles(out)
