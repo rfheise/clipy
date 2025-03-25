@@ -16,6 +16,7 @@ class SubtitleGenerator():
         self.subtitle_interval = subtitle_interval
         self.__audio_file = None
         self.__temp_buffer = None
+        self.in_segments = True
     
     @property
     def temp_buffer(self):
@@ -24,7 +25,9 @@ class SubtitleGenerator():
             if os.path.exists("/dev/shm"):
                 self.__temp_buffer = f"/dev/shm/{self.__temp_buffer}"
         return self.__temp_buffer
-    
+    def transcribe_entire_audio_file(self):
+        #TODO transcribe the entire audio file
+        pass
     def generate_subtitles(self):        
         Logger.log(f"Generating subtitles for {self.fname}")
         audio = AudioSegment.from_file(self.audio_file)
@@ -32,9 +35,13 @@ class SubtitleGenerator():
         timestamps = [[i, i+self.subtitle_interval] for i in range(0, int(self.duration), self.subtitle_interval)]
         timestamps[-1][1] = self.duration
         timestamps = TimeStamps.from_ints(timestamps) 
-        # generate segments 
-        for t in tqdm(timestamps, total=len(timestamps)):
-            out = self.generate_subtitle_segment(t)
+        #generate segments 
+        if self.in_segments:
+            for t in tqdm(timestamps, total=len(timestamps)):
+                out = self.generate_subtitle_segment(t)
+                self.add_subtitles(out)
+        else:
+            out = self.transcribe_entire_audio_file()
             self.add_subtitles(out)
         self.subtitles.sort(key=lambda x: x.timestamp.start)
         if Logger.debug_mode:
