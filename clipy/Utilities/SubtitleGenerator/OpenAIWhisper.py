@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 class OpenAIWhisper(SubtitleGenerator):
     def __init__(self, fname, model_name="tiny.en", no_speech_prob_threshold=0.5,
-                 subtitle_interval=30,sample_rate=16000):
+                 subtitle_interval=20,sample_rate=16000):
         super().__init__(fname,subtitle_interval)
         self.__model = None
         self.model_name = model_name
