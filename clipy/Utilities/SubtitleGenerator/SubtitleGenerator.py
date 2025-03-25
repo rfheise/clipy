@@ -9,7 +9,7 @@ import random
 
 class SubtitleGenerator():
 
-    def __init__(self, fname, subtitle_interval=30):
+    def __init__(self, fname, subtitle_interval=20):
         self.subtitles = []
         self.fname = fname 
         self.type = os.path.splitext(fname)[1]

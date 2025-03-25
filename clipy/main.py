@@ -16,7 +16,7 @@ def main():
     platform = sys.argv[3]
 
     # Highlighting the subtitles
-    highlighter = SubtitleHighlighter(video_path=fname, subtitle_interval=120)
+    highlighter = SubtitleHighlighter(video_path=fname, subtitle_interval=20)
     intervals = highlighter.highlight_intervals()
 
     # Cropping the video
