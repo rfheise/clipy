@@ -6,7 +6,7 @@ import time
 def generate_subtitles(in_dir, out_dir, model="tiny.en"):
 
     # get all files and make new directories 
-    files = get_files(in_dir, [".mp4",])
+    files = get_files(in_dir, [".mp3",])
     error_files = []
     for f in files:
         out_file = os.path.join(out_dir, os.path.relpath(f, in_dir))
@@ -67,6 +67,6 @@ if __name__ == "__main__":
     with open("./subtitles/model-times.txt", "w") as f:
         start = time.time()
         for model in models:
-            generate_subtitles("./videos/viral", f"./subtitles/{model}", model=model)
+            generate_subtitles("./videos", f"./subtitles/{model}", model=model)
         end = time.time()
         f.write(f"{model}:{end - start}\n")

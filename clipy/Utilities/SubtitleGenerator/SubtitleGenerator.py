@@ -16,7 +16,6 @@ class SubtitleGenerator():
         self.subtitle_interval = subtitle_interval
         self.__audio_file = None
         self.__temp_buffer = None
-        self.in_segments = True
     
     @property
     def temp_buffer(self):
@@ -25,23 +24,16 @@ class SubtitleGenerator():
             if os.path.exists("/dev/shm"):
                 self.__temp_buffer = f"/dev/shm/{self.__temp_buffer}"
         return self.__temp_buffer
-    def transcribe_entire_audio_file(self):
-        #TODO transcribe the entire audio file
-        pass
     def generate_subtitles(self):        
         Logger.log(f"Generating subtitles for {self.fname}")
         audio = AudioSegment.from_file(self.audio_file)
         self.duration = audio.duration_seconds
         timestamps = [[i, i+self.subtitle_interval] for i in range(0, int(self.duration), self.subtitle_interval)]
         timestamps[-1][1] = self.duration
-        timestamps = TimeStamps.from_ints(timestamps) 
+        timestamps = TimeStamps.from_nums(timestamps) 
         #generate segments 
-        if self.in_segments:
-            for t in tqdm(timestamps, total=len(timestamps)):
-                out = self.generate_subtitle_segment(t)
-                self.add_subtitles(out)
-        else:
-            out = self.transcribe_entire_audio_file()
+        for t in tqdm(timestamps, total=len(timestamps)):
+            out = self.generate_subtitle_segment(t)
             self.add_subtitles(out)
         self.subtitles.sort(key=lambda x: x.timestamp.start)
         if Logger.debug_mode:
@@ -117,6 +109,11 @@ class SubtitleGenerator():
             i += 1
 
 
+    @staticmethod
+    def timestamp_to_srt_time(start_time):
+        start_hours, start_minutes, start_seconds, start_miliseconds = int(start_time // 3600), int((start_time % 3600) // 60), int(start_time % 60), format(int((start_time % 1) * 1000), "03d")
+        return f"{start_hours:02}:{start_minutes:02}:{start_seconds:02},{start_miliseconds}"
+    
     def to_srt(self, srt_path, sub_duration=5):
         """Write the transcript to an SRT file based on the video's duration."""
         lines = []
@@ -130,15 +127,9 @@ class SubtitleGenerator():
                 cand = min(end_time + sub_duration, self.subtitles[i + 1].timestamp.start)
                 end_time = cand
 
-            start_hours, start_minutes, start_seconds, start_miliseconds = int(start_time // 3600), int((start_time % 3600) // 60), int(start_time % 60), format(int((start_time % 1) * 1000), "03d")
-            end_hours, end_minutes, end_seconds, end_miliseconds = int(end_time // 3600), int((end_time % 3600) // 60), int(end_time % 60), format(int((end_time % 1) * 1000), "03d")
-
-            start_timestamp = f"{start_hours:02}:{start_minutes:02}:{start_seconds:02},{start_miliseconds}"
-            end_timestamp = f"{end_hours:02}:{end_minutes:02}:{end_seconds:02},{end_miliseconds}"
-
             segment_text = "".join(segment.text)
 
-            lines.append(f"{i + 1}\n{start_timestamp} --> {end_timestamp}\n{segment_text}\n\n\n")
+            lines.append(f"{i + 1}\n{self.timestamp_to_srt_time(start_time)} --> {self.timestamp_to_srt_time(end_time)}\n{segment_text}\n\n\n")
 
         with open(srt_path, "w") as srt_file:
             srt_file.writelines(lines)

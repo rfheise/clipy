@@ -9,7 +9,7 @@ class TimeStamps():
             self.timestamps = timestamps
 
     @classmethod
-    def from_ints(cls,integer_timestamps):
+    def from_nums(cls,integer_timestamps):
         ts = cls()
         for t in integer_timestamps:
             ts.add_timestamp(Timestamp(t[0], t[1]))
