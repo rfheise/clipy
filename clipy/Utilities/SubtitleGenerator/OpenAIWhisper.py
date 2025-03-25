@@ -62,7 +62,7 @@ class OpenAIWhisper(SubtitleGenerator):
         
 
 if __name__ == "__main__":
-    sg = OpenAIWhisper("./linus.mp3")
+    sg = OpenAIWhisper("./videos/films/red_river.mp4",model_name="turbo")
     sg.generate_subtitles()
-    sg.to_srt("tmp.srt")
+    sg.to_srt("tmp_2.srt")
     # print(str(sg))
