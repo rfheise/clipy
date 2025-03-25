@@ -28,9 +28,9 @@ class SubtitleGenerator():
     def generate_subtitles(self):        
         Logger.log(f"Generating subtitles for {self.fname}")
         audio = AudioSegment.from_file(self.audio_file)
-        duration = audio.duration_seconds
-        timestamps = [[i, i+self.subtitle_interval] for i in range(0, int(duration), self.subtitle_interval)]
-        timestamps[-1][1] = duration
+        self.duration = audio.duration_seconds
+        timestamps = [[i, i+self.subtitle_interval] for i in range(0, int(self.duration), self.subtitle_interval)]
+        timestamps[-1][1] = self.duration
         timestamps = TimeStamps.from_ints(timestamps) 
         # generate segments 
         for t in tqdm(timestamps, total=len(timestamps)):
