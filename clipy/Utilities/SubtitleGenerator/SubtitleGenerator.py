@@ -7,6 +7,11 @@ from tqdm import tqdm
 import json 
 import random
 
+class FileNotFormattedProperly(Exception):
+    def __init__(self, f_path, f_type):
+        self.message = f"{f_path} not formatted as proper {f_type}"
+        super().__init__(self.message)
+
 class SubtitleGenerator():
 
     def __init__(self, fname, subtitle_interval=20):
@@ -24,6 +29,7 @@ class SubtitleGenerator():
             if os.path.exists("/dev/shm"):
                 self.__temp_buffer = f"/dev/shm/{self.__temp_buffer}"
         return self.__temp_buffer
+    
     def generate_subtitles(self):        
         Logger.log(f"Generating subtitles for {self.fname}")
         audio = AudioSegment.from_file(self.audio_file)
@@ -36,8 +42,6 @@ class SubtitleGenerator():
             out = self.generate_subtitle_segment(t)
             self.add_subtitles(out)
         self.subtitles.sort(key=lambda x: x.timestamp.start)
-        if Logger.debug_mode:
-            self.save("tmp.json")
         Logger.log(f"Finished Generating Subtitles for {self.fname}")
         self.merge()
         self.cleanup()
@@ -54,10 +58,55 @@ class SubtitleGenerator():
             json.dump(json_format, f)
 
     def load(self, in_file):
+        if os.path.splitext(in_file)[1] == ".json":
+            self.load_from_json(in_file)
+        elif os.path.splitext(in_file)[1] == ".srt":
+            self.load_from_srt(in_file)
+        else:
+            Logger.log_error("File type not supported")
+
+    @classmethod 
+    def init_from_file(cls, f):
+        sub = cls(f)
+        sub.load(f)
+        return sub
+    
+    def load_from_json(self, in_file):
         with open(in_file, "r") as f:
             json_format = json.load(f)
         for sub in json_format:
             self.add_subtitle(Subtitle(sub["text"], Timestamp(sub["start"], sub["end"])))
+    
+    def load_from_srt(self, in_file):
+
+        with open(in_file, "r") as srt:
+            lines = iter(srt)
+            while True:
+                line = next(lines, None)
+                if line == None:
+                    return
+                line = line.strip("\n")
+                #read until 
+                while line.isdigit() is False:
+                    line = next(lines, None)
+                    if line == None:
+                        return
+                    line = line.strip()
+                #read srt segment 
+                #process timestamps 
+                timestamp = next(lines, None)
+                if timestamp is None:
+                    raise FileNotFormattedProperly(in_file, "srt")
+                try:
+                    timestamp = Timestamp.from_srt(timestamp.strip())
+                except:
+                    raise FileNotFormattedProperly(in_file, "srt")
+                text = next(lines,None)
+                if text is None:
+                    raise FileNotFormattedProperly(in_file, "srt")
+                text = text.strip()
+                self.subtitles.append(Subtitle(text, timestamp))
+                
     @property
     def audio_file(self):
         #lazy init audio file 
@@ -163,6 +212,14 @@ class SubtitleGenerator():
             s += "\t"+ str(sub) + "\n" 
         return s + "]"
     
+    def format_for_llm(self, fname=None):
+        count = iter(range(len(self.subtitles)))
+        txt = "\n".join([f"{next(count, 0)}: {s.text}" for s in self.subtitles])
+        if  fname:
+            with open(fname, "w") as f:
+                f.write(txt)
+        return txt
+    
 
     
 class Subtitle():
@@ -185,3 +242,7 @@ class Subtitle():
     def duration(self):
         return self.timestamp.end - self.timestamp.start
 
+if __name__ == "__main__":
+    # subs = SubtitleGenerator.init_from_file("./subtitles/onlyFilms/turbo/red_river.srt")
+    subs = SubtitleGenerator
+    print(subs.format_for_llm("out.llm_sub"))

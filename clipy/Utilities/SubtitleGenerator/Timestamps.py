@@ -48,3 +48,20 @@ class Timestamp:
 
     def __str__(self):
         return f"{self.start} --> {self.end}"
+    
+    @classmethod
+    def from_srt(cls, srt):
+        start, end = srt.split(" --> ")
+        start = cls.process_srt_timestamp(start)
+        end = cls.process_srt_timestamp(end)
+        return cls(start, end)
+    
+    @staticmethod
+    def process_srt_timestamp(timestamp):
+        hours,minutes,seconds = timestamp.split(":")
+        t = int(hours) * 3600 
+        t += int(minutes) * 60 
+        seconds, miliseconds = seconds.split(",")
+        t += int(seconds)  
+        t += int(miliseconds)/1000 
+        return t

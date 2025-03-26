@@ -3,7 +3,7 @@ import os
 import sys
 import time 
 
-def generate_subtitles(in_dir, out_dir, model="tiny.en"):
+def generate_subtitles(in_dir, out_dir, model="turbo"):
 
     # get all files and make new directories 
     files = get_files(in_dir, [".mp3",])

@@ -4,6 +4,8 @@
 *.srt
 *.pyc
 *.webm
+*.sub
+*.wav
 __pycache__/
 videos/
 error_files.txt
@@ -11,3 +13,4 @@ subtitles/
 mp3/
 videos
 mp3
+.cache/

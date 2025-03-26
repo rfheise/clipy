@@ -36,7 +36,7 @@ class PrintLog(Log):
 
 class Logger():
     logs = [PrintLog()]
-    debug_mode = False
+    debug_mode = True
     # debug_mode = False
     def __init__(self):
         pass 
