@@ -4,3 +4,6 @@ tqdm
 pydub
 torch
 openai
+torchaudio
+scenedetect
+opencv-python

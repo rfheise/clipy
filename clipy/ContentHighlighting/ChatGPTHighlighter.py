@@ -1,8 +1,9 @@
 from .SubtitleHighlighter import SubtitleHighlighter
 from openai import OpenAI
 import json
-from ..Utilities import Logger
+from ..Utilities import Logger, GhostCache, Cache
 from ..Utilities import Timestamp, TimeStamps
+from scenedetect import detect, ContentDetector
 
 class ChatGPTHighlighter(SubtitleHighlighter):
 
@@ -11,8 +12,8 @@ class ChatGPTHighlighter(SubtitleHighlighter):
     Please select the most interesting 5 - 10 moments and provide a timestamp and score for each and output in a json format. 
     """
 
-    def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None):
-        super().__init__(video_file, approx_length)
+    def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache):
+        super().__init__(video_file, approx_length, cache=cache)
         self.model = model 
         self.sys_prompt = sys_prompt
         if self.sys_prompt is None:
@@ -61,6 +62,7 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         return subtitle_list
     
     def get_list_from_json(self, moments):
+
         timestamps = []
         for moment in moments:
             sub_id = int(moment["timestamp"])
@@ -76,10 +78,15 @@ class ChatGPTHighlighter(SubtitleHighlighter):
                 if end > subtitle.timestamp.start and end < subtitle.timestamp.end:
                     end = subtitle.timestamp.end
             timestamps.append((start,end))
+        
         return TimeStamps.from_nums(timestamps)
 
 
     def call_api(self):
+
+        if self.cache.exists("chatgpt"):
+            return self.cache.get_item("chatgpt")
+        
         Logger.log("Calling ChatGPT To Highlight Interesting Moments")
         response = self.client.responses.create(
             model=self.model,
@@ -89,6 +96,9 @@ class ChatGPTHighlighter(SubtitleHighlighter):
             
         )
         Logger.debug(response.output)
+
+        self.cache.set_item("chatgpt", response.output_text, "dev")
+
         return response.output_text
 
     def get_model_input(self):
@@ -116,18 +126,15 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         return model_input
     
 if __name__ == "__main__":
-    video_file = "./videos/films/red_river.mp4"
-    highlighter = ChatGPTHighlighter(video_file,model="gpt-4o")
+    video_file = "./videos/Episode S2E8.mp4"
+    cache_file = "./.cache/tmp.sav"
+    cache = Cache(dev=True)
+    cache.load(cache_file)
+    cache.clear('highlighter')
+    highlighter = ChatGPTHighlighter(video_file,model="gpt-4o-mini", cache=cache)
     timestamps = highlighter.highlight_intervals()
+    cache.save(cache_file)
     
-    with open(".cache/.tmp_timestamps.json", "w") as f:
-        ts = []
-        for t in timestamps:
-            ts.append([t.start, t.end])
-        f.write(json.dumps({"nums":ts}))
+    
 
-    with open(".cache/.tmp_timestamps.json","r") as f:
-        timestamps = json.loads(f.read())["nums"]
-    timestamps = TimeStamps.from_nums(timestamps)
-    print(timestamps)
     
