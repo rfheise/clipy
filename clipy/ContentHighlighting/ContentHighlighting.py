@@ -19,6 +19,7 @@ class ContentHighlighting():
     def adjust_timestamps_to_scenes(self, timestamps):
 
         scenes = detect_scenes(self.video_file, cache=self.cache)
+        scenes = TimeStamps([scene.get_timestamp() for scene in scenes])
         #could be improved but fine for now
         #since it isn't a bottleneck
         ts = TimeStamps()

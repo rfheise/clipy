@@ -15,32 +15,28 @@ def detect_scenes(fname, threshold=10, cache=GhostCache):
         return scenes
     Logger.log("Detecting Scenes")
     scene_list = detect(fname, ContentDetector(threshold=threshold,min_scene_len=10,
-                                               frame_window=3,
-                                                min_content_val=10),show_progress=True)
+                                            #    frame_window=3,
+                                                # min_content_val=10
+                                                ),show_progress=True)
     # scene_list = scene_manager.detect_scenes(video, show_progress=True)
-    stamps = []
-    for (start,end) in scene_list:
-        stamps.append((start.get_seconds(), end.get_seconds()))
-    # Logger.log("Finished Detecting Scenes")
-    #TODO return list of scenes rather than TimeStamps object
-    #cache this return value instead of pyscenes
-    stamps = TimeStamps.from_nums(stamps)
-    stamps.sort()
+    scenes = [Scene.init_from_pyscene(scene) for scene in scene_list]
+    scenes.sort(key=lambda x:x.start)
     cache.set_item('scenes', scenes, "basic")
-    return stamps
+    return scenes
 
 
 class Scene():
 
     def __init__(self, start,end, frame_start, frame_end):
-        #TODO set required values
-        pass 
+        self.start = start 
+        self.end = end 
+        self.frame_start = frame_start 
+        self.frame_end = frame_end
 
     @classmethod
     def init_from_pyscene(cls, scene):
-        #TODO init from pyscene 
-        pass
+        return cls(scene[0].get_seconds(), scene[1].get_seconds(),
+                   scene[0].get_frames(), scene[1].get_frames())
 
-    def get_timestamps(self):
-        #TODO get timestamps from scene
-        pass
+    def get_timestamp(self):
+        return Timestamp(self.start, self.end)

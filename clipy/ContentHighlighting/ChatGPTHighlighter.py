@@ -131,7 +131,7 @@ if __name__ == "__main__":
     cache = Cache(dev=True)
     cache.load(cache_file)
     cache.clear('highlight')
-    # cache.clear("scenes")
+    cache.clear("scenes")
     highlighter = ChatGPTHighlighter(video_file,model="gpt-4o-mini", cache=cache)
     timestamps = highlighter.highlight_intervals()
     cache.save(cache_file)
