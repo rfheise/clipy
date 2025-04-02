@@ -33,13 +33,28 @@ class TimeStamps():
     def add_timestamp(self, timestamp):
         self.timestamps.append(timestamp) 
     
+    def sort(self, key=lambda x:x.start):
+        self.timestamps.sort(key=key)
+    
     def __str__(self):
-        s = "[ "
+        s = "[ \n"
         for timestamp in self.timestamps:
-            s += str(timestamp) + ","
+            s += str(timestamp) + "," + "\n"
         s += " ]"
         return s
     
+    def __getitem__(self, index):
+        return self.timestamps[index]
+
+    def __setitem__(self, index, value):
+        self.timestamps[index] = value
+    
+    def __delitem__(self, index):
+        del self.timestamps[index]
+    
+    def __len__(self):
+        return len(self.timestamps)
+
 class Timestamp:
 
     def __init__(self, start, end):
@@ -65,3 +80,11 @@ class Timestamp:
         t += int(seconds)  
         t += int(miliseconds)/1000 
         return t
+    
+    @property
+    def duration(self):
+        return self.end - self.start
+    
+    def __str__(self):
+
+        return f"{self.start} --> {self.end}"

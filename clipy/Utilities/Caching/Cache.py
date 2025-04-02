@@ -36,7 +36,7 @@ class Cache():
         self.cache[key] = val
         
     def exists(self, key):
-        return self.cache is not None and key in self.cache 
+        return self.cache is not None and key in self.cache and self.cache[key] is not None
     
     def init_cache(self):
 
@@ -63,9 +63,12 @@ class Cache():
         with open(fname, 'wb') as f:
             pickle.dump(self.cache, f)
     
-    def clear(self, key):
+    def clear(self, key = None):
         
-        self.set_item(key, None)
+        if key is None:
+            self.init_cache()
+        else:
+            self.set_item(key, None)
 
 class GhostCache(Cache):
 

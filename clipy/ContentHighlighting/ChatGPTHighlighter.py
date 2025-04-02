@@ -73,9 +73,9 @@ class ChatGPTHighlighter(SubtitleHighlighter):
             end = sub_timestamp.start + self.approx_length/2
             for subtitle in self.sub_gen.subtitles:
                 # if start/end in middle of dialogue wait until the end
-                if start > subtitle.timestamp.start and start < subtitle.timestamp.end:
+                if start >= subtitle.timestamp.start and start <= subtitle.timestamp.end:
                     start = subtitle.timestamp.start 
-                if end > subtitle.timestamp.start and end < subtitle.timestamp.end:
+                if end >= subtitle.timestamp.start and end <= subtitle.timestamp.end:
                     end = subtitle.timestamp.end
             timestamps.append((start,end))
         
@@ -126,11 +126,12 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         return model_input
     
 if __name__ == "__main__":
-    video_file = "./videos/Episode S2E8.mp4"
-    cache_file = "./.cache/tmp.sav"
+    video_file = "./videos/walk_the_line.mp4"
+    cache_file = "./.cache/tmp-walk-line.sav"
     cache = Cache(dev=True)
     cache.load(cache_file)
-    cache.clear('highlighter')
+    cache.clear('highlight')
+    # cache.clear("scenes")
     highlighter = ChatGPTHighlighter(video_file,model="gpt-4o-mini", cache=cache)
     timestamps = highlighter.highlight_intervals()
     cache.save(cache_file)
