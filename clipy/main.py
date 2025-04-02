@@ -21,7 +21,7 @@ def main():
     intervals = highlighter.highlight_intervals()
 
     # Cropping the video
-    cropper = TalkNetCropper(intervals, video_path=fname, cache = cache)
+    cropper = TalkNetCropper(fname, intervals, cache = cache)
     videos = cropper.crop()
 
     # Adding pizzazz to the subtitles

@@ -22,7 +22,25 @@ def detect_scenes(fname, threshold=10, cache=GhostCache):
     for (start,end) in scene_list:
         stamps.append((start.get_seconds(), end.get_seconds()))
     # Logger.log("Finished Detecting Scenes")
+    #TODO return list of scenes rather than TimeStamps object
+    #cache this return value instead of pyscenes
     stamps = TimeStamps.from_nums(stamps)
     stamps.sort()
     cache.set_item('scenes', scenes, "basic")
     return stamps
+
+
+class Scene():
+
+    def __init__(self, start,end, frame_start, frame_end):
+        #TODO set required values
+        pass 
+
+    @classmethod
+    def init_from_pyscene(cls, scene):
+        #TODO init from pyscene 
+        pass
+
+    def get_timestamps(self):
+        #TODO get timestamps from scene
+        pass
