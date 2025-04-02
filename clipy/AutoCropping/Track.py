@@ -3,13 +3,13 @@
 class Track():
 
 
-    def __init__(self, scene_id):
-        self.scene_id = []
+    def __init__(self, scene):
+        self.scene = scene
+        self.start = None 
+        self.end = None
         self.frames = []
-        self.start = None
-        self.end = None 
 
-    def add_frame(self, frame):
+    def add(self, frame):
 
         if self.start is None:
             self.start = frame
@@ -18,7 +18,7 @@ class Track():
     
     #add artificial end
     def set_end(self, frame):
-        self.end=frame 
+        self.end = frame 
     
     #add artificial start 
     def set_start(self, frame):
@@ -30,8 +30,3 @@ class Track():
         # if crop not set don't do anything just add the whole
         # thing resized the video 
         pass 
-
-    @classmethod
-    def init_from_scene(cls, scene):
-        #TODO
-        pass

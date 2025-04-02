@@ -3,12 +3,13 @@ from ..AutoCropper import AutoCropper
 from .Face import Face, FacialTrack 
 from ..Track import Track
 from collections import defaultdict
+from ..FaceDetection.s3fd import S3FD
 
 class AVASD(AutoCropper):
 
-    def __init__(self, video_path, clips, face_detection_model, cache=GhostCache):
+    def __init__(self, video_path, clips, face_detection_model=S3FD, cache=GhostCache):
         super().__init__(video_path, clips, cache)
-        self.face_detection_model = face_detection_model 
+        self.fdm = face_detection_model(device=Logger.device)
         #number of failed detections before face is rejected
         self.num_failed_det = 10
         self.min_frames_in_track = 20
@@ -57,9 +58,8 @@ class AVASD(AutoCropper):
     def generate_facial_tracks(self, clip):
 
         clip_tracks = []
-        for scene in clip:
-            scene_tracks = []
-            for frame in scene:
+        for scene in clip.get_scenes():
+            for frame in scene.get_frames():
                 faces = self.detect_faces(frame)
                 for face in faces:
 
@@ -72,9 +72,10 @@ class AVASD(AutoCropper):
                     # otherwise create new track
                     facial_tracks.append(FacialTrack(scene.initial_frame, scene.indx))
                     facial_tracks[-1].add(face)
+                    
                 # keep track only if it meets detection threshold
                 facial_tracks = [track for track in facial_tracks if abs(frame.id - facial_tracks[-1].last_idx) < self.num_failed_det]
-
+            scene.free_frames()
             # keep only tracks that meet min frame req
             facial_tracks = [track for track in facial_tracks if len(track) >= self.min_frames_in_track]
             facial_tracks.audio = scene.get_audio()
@@ -85,20 +86,21 @@ class AVASD(AutoCropper):
         clip_tracks.sort(key = lambda x:x.initial_frame)
         return clip_tracks
 
-
-
-
-
-
-
-
     def crop_frames_around_center(clip, centers):
         #TODO
         # crop clip using the speficied center for each frame
         pass
 
     def detect_faces(self, frame):
-        #TODO
-        # facial detection engine
-        # returns list of face objects
-        pass
+        
+        if frame.cv2 is None:
+            Logger.log_error("CV2 Frames Not Loaded")
+            exit(3)
+        bboxes = self.fdm(frame.cv2)
+        faces = []
+        for bbox in bboxes:
+            face = Face.init_from_frame(frame)
+            face.set_face_detection_args(bbox[:-1], bbox[-1])
+            faces.append(face)
+        return faces
+        

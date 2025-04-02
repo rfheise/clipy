@@ -10,6 +10,7 @@ class AutoCropper():
         self.cache = cache 
     
     def detect_center_across_frames(self, clip):
+
         #TODO
         # detect center across all frames in video file 
         # to be implemented by detection engine
@@ -26,9 +27,10 @@ class AutoCropper():
         return videos
     
     def create_clip_from_video_file(self, timestamp):
-        return Clip.initalize_clip(self.video_file, timestamp)
+        return Clip.initalize_clip(self.video_file, timestamp, self.cache)
 
     def crop_frames_around_center(clip, centers):
+
         #TODO
         # crop clip using the speficied center for each frame
         pass

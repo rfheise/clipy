@@ -1,4 +1,5 @@
 import sys
+import torch 
 
 class Log():
 
@@ -37,6 +38,7 @@ class PrintLog(Log):
 class Logger():
     logs = [PrintLog()]
     debug_mode = True
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     # debug_mode = False
     def __init__(self):
         pass 

@@ -17,12 +17,13 @@ class Framestamp(Timestamp):
 class Frame():
 
 
-    def __init__(self, idx, center, width, height):
+    def __init__(self, idx, center, width, height, cv2=None):
 
         self.idx = idx
         self.center = center 
         self.width = width 
         self.height = height
+        self.cv2 = None
 
     @classmethod
     def init_from_cv2_frame(cls, frame):
@@ -36,3 +37,8 @@ class Frame():
         #crop frame using generic process
         #possibly override for various types of frames
         pass
+
+    def load_frame_from_cv2(self, cv2_img):
+
+        #load frame and store in cv2
+        self.cv2 = cv2_img
