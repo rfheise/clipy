@@ -24,6 +24,21 @@ class Track():
         track = cls(scene)
         for i, frame in enumerate(frames):
             track.add(Frame.init_from_cv2_frame(frame, scene.frame_start + i))
-    
+        return track 
+
     def __len__(self):
         return len(self.frames)
+    
+    def load_frames(self, mode="model"):
+        # self.scene.load_frames(mode = mode)
+        #scenes are small so this inefficiency is fine for now 
+        for face in self.frames:
+            for i, frame in enumerate(self.scene.get_frames(mode = mode)):
+                if face.idx == i + self.scene.frame_start:
+                    face.set_cv2(frame)
+    
+    def free_frames(self):
+        self.scene.free_frames()
+        for face in self.frames:
+            face.clear_cv2()
+        

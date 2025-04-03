@@ -4,6 +4,7 @@ from ..Logging.Logger import Logger
 from scenedetect import VideoManager, SceneManager
 from ..Caching.Cache import GhostCache
 import cv2
+import moviepy.editor as mp
 
 def detect_scenes(fname, threshold=10, cache=GhostCache):
     # video = open_video(fname)
@@ -28,6 +29,7 @@ def detect_scenes(fname, threshold=10, cache=GhostCache):
 
 class Scene():
 
+    counter = 0
     def __init__(self, video_file, start,end, frame_start, frame_end):
         self.start = start 
         self.end = end 
@@ -36,6 +38,9 @@ class Scene():
         self.video_file = video_file
         self.cap = None
         self.frames = None
+        self.audio = None
+        self.idx = Scene.counter 
+        Scene.counter += 1
 
     @classmethod
     def init_from_pyscene(cls, fname, scene):
@@ -54,15 +59,15 @@ class Scene():
             self.end = timestamp.end 
             self.frame_end = Scene.get_frame_at_timestamp(self.video_file, timestamp.end)
     
-    def get_frames(self):
+    def get_frames(self, mode="model"):
         if self.frames is None:
-            self.load_frames()
+            self.load_frames(mode)
         return self.frames 
 
     def free_frames(self):
         self.frames = None    
 
-    def load_frames(self):
+    def load_frames(self, mode = "model"):
         self.frames = []
         cap = cv2.VideoCapture(self.video_file)
         Logger.debug(f"{self.start}, {self.end}, {self.frame_start}, {self.frame_end}")
@@ -72,9 +77,22 @@ class Scene():
             if not ret:
                 Logger.log_error("indexed frame not in video")
                 exit(4)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if mode == "model":
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.frames.append(frame)
         cap.release()
+    
+    def get_audio(self):
+        if self.audio is None:
+            self.load_audio()
+        return self.audio
+    
+    def load_audio(self):
+        video = mp.VideoFileClip(self.video_file)
+        self.audio = video.audio.subclip(self.start, self.end)
+
+    def free_audio(self):
+        self.audio = None
 
     @staticmethod
     def get_frame_at_timestamp(video_path, timestamp_sec):

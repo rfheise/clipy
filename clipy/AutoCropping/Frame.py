@@ -39,7 +39,10 @@ class Frame():
         #possibly override for various types of frames
         pass
 
-    def load_frame_from_cv2(self, cv2_img):
+    def set_cv2(self, cv2_img):
 
         #load frame and store in cv2
         self.cv2 = cv2_img
+    
+    def clear_cv2(self):
+        self.set_cv2(None)

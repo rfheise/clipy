@@ -60,3 +60,5 @@ class Logger():
             return
         for log in Logger.logs:
             log.debug(message)
+
+Logger.log(f"Using device {Logger.device}")

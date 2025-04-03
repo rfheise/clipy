@@ -38,13 +38,13 @@ class AutoCropper():
     
     @staticmethod
     def get_scenes_from_timestamp(video_file, timestamp, cache=GhostCache()):
-        print(cache.exists("scenes"))
         #init clip with scenes
         scenes = detect_scenes(video_file, cache=cache)
         # get all scenes in interval
         clip_scenes = []
         for scene in scenes:
-            if scene.start <= timestamp.start and scene.end >= timestamp.start:
+            if (scene.start >= timestamp.start and scene.start < timestamp.end) or \
+                (scene.end <= timestamp.end and scene.start > timestamp.start):
                 clip_scenes.append(scene)
         
         # shortend start and end scene

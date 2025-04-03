@@ -2,7 +2,7 @@ from .SubtitleHighlighter import SubtitleHighlighter
 from openai import OpenAI
 import json
 from ..Utilities import Logger, GhostCache, Cache
-from ..Utilities import Timestamp, TimeStamps
+from ..Utilities import Timestamp, TimeStamps, OpenAIWhisper
 from scenedetect import detect, ContentDetector
 
 class ChatGPTHighlighter(SubtitleHighlighter):
@@ -12,8 +12,9 @@ class ChatGPTHighlighter(SubtitleHighlighter):
     Please select the most interesting 5 - 10 moments and provide a timestamp and score for each and output in a json format. 
     """
 
-    def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache):
-        super().__init__(video_file, approx_length, cache=cache)
+    def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache, sub_model="tiny"):
+        sub_gen = OpenAIWhisper(video_file, model_name=sub_model)
+        super().__init__(video_file, approx_length, cache=cache,sub_gen=sub_gen)
         self.model = model 
         self.sys_prompt = sys_prompt
         if self.sys_prompt is None:

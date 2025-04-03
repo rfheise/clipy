@@ -1,10 +1,12 @@
 from ...Utilities import GhostCache, Logger
 from ..AutoCropper import AutoCropper
-from .Face import Face, FacialTrack 
+from .Face import Face, FacialTrack, write_video
 from ..Track import Track
 from collections import defaultdict
 from .s3fd import S3FD
 from tqdm import tqdm
+import os
+import moviepy.editor as mp
 
 import torch
 torch.set_num_threads(8)
@@ -25,14 +27,48 @@ class AVASD(AutoCropper):
             self.facial_tracks = self.cache.get_item("facial_tracks")
         else:
             self.facial_tracks = self.generate_facial_tracks(clip)
-            print("exiting normally")
-            exit(0)
+
+            # self.draw_bbox_around_facial_tracks('./.cache/tracks')
+            self.draw_bbox_around_scene(f"./.cache/scene.mp4")
+
             self.score_tracks(self.facial_tracks)
             self.cache.set_item("facial_tracks", self.facial_tracks)
         #speakers is list of lists of centers in case there are multiple speakers
         speakers = self.get_speakers_from_tracks(self.facial_tracks)
         return speakers
     
+    def draw_bbox_around_facial_tracks(self, dirname):
+        
+        os.makedirs(dirname, exist_ok=True)
+        count = 0
+        for scene in self.facial_tracks:
+            for track in scene:
+                count += 1
+                if type(track) is FacialTrack:
+                    track.render_bbox_video(os.path.join(dirname, f"track-{count}.mp4"))
+
+    def draw_bbox_around_scene(self, fname):
+        #was really really tired so started to get sloppy around this point
+        #definitely needs re-done
+        for scene in self.facial_tracks:
+            for track in scene:
+                track.load_frames(mode="render")
+                for frame in track.frames:
+                    frame.draw_bbox()
+        
+        frames = []
+        for tracks in self.facial_tracks:
+            frames.extend(tracks[0].scene.get_frames())
+        write_video(frames, "./.cache/scene.tmp.mp4")
+        new_video=mp.VideoFileClip("./.cache/scene.tmp.mp4")
+        video = mp.VideoFileClip(self.video_file)
+        audio = video.audio.subclip(self.facial_tracks[0][0].scene.start, self.facial_tracks[-1][0].scene.end)
+        new_video.audio = audio
+        new_video.write_videofile(fname, codec="libx264", audio_codec="aac")
+        os.remove("./.cache/scene.tmp.mp4")
+        
+        
+
     def score_tracks(self, facial_tracks):
 
         for track in facial_tracks:
@@ -71,12 +107,15 @@ class AVASD(AutoCropper):
                 frame_idx = i + scene.frame_start
                 faces = self.detect_faces(frame, frame_idx)
                 for face in faces:
-
+                    setinel = False
                     # if facial track exists add it
                     for track in facial_tracks:
                         if track.contains_face(face):
                             track.add(face)
-                            continue 
+                            s = True
+                            break 
+                    if setinel:
+                        continue
                     
                     # otherwise create new track
                     facial_tracks.append(FacialTrack(scene))
@@ -94,7 +133,7 @@ class AVASD(AutoCropper):
         
             clip_tracks.append(facial_tracks)
             scene.free_frames()
-        clip_tracks.sort(key = lambda x:x.frames[0].idx)
+        clip_tracks.sort(key = lambda x:x[0].frames[0].idx)
         return clip_tracks
 
     def crop_frames_around_center(clip, centers):
@@ -124,10 +163,10 @@ if __name__ == "__main__":
     cache.load(cache_file)
     # cache.clear('highlight')
     # cache.clear('scenes')
-    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache)
+    # cache.clear()
+    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache, sub_model="tiny.en")
     intervals = highlighter.highlight_intervals()
     cache.save(cache_file)
-    print(cache.exists("scenes"))
     #don't cache AVASD quite yet
     cropper = AVASD(video_path, intervals, cache=cache)
     cropper.crop()
