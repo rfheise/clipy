@@ -17,19 +17,20 @@ class Framestamp(Timestamp):
 class Frame():
 
 
-    def __init__(self, idx, center, width, height, cv2=None):
+    def __init__(self, idx, center, width, height, cv2_img=None):
 
         self.idx = idx
         self.center = center 
         self.width = width 
         self.height = height
-        self.cv2 = None
+        self.cv2_img = cv2_img
 
     @classmethod
-    def init_from_cv2_frame(cls, frame):
-        #TODO
-        #initialize frame object form cv2 frame 
-        pass 
+    def init_from_cv2_frame(cls, frame, frame_idx):
+
+        height, width =  frame.shape[:2]
+        center = (height//2, width//2)
+        return cls(frame_idx, center, width, height)
 
     def crop_frame(self, crop_algo):
 

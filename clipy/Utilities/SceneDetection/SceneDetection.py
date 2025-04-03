@@ -34,7 +34,7 @@ class Scene():
         self.frame_start = frame_start 
         self.frame_end = frame_end
         self.video_file = video_file
-        self.frames = None
+        self.cap = None
 
     @classmethod
     def init_from_pyscene(cls, fname, scene):
@@ -52,19 +52,28 @@ class Scene():
         if timestamp.end < self.end:
             self.end = timestamp.end 
             self.frame_end = Scene.get_frame_at_timestamp(timestamp.end)
-
+    
     def get_frames(self):
-
         if self.frames is None:
-            self.load_frames()
+            self.frames = self.load_frames()
         return self.frames 
-    
-    def load_frames(self):
-        #TODO load frames from video input file
-        pass
-    
+
     def free_frames(self):
-        self.frames = None
+        self.frames = None    
+
+    def load_frames(self):
+        self.frames = []
+        cap = cv2.VideoCapture(self.video_path)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_start)
+
+        for i in range(self.frame_start, self.frame_end + 1):
+            ret, frame = cap.read()
+            if not ret:
+                Logger.log_error("indexed frame not in video")
+                exit(4)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            self.frames.append(frame)
+        cap.release()
 
     @staticmethod
     def get_frame_at_timestamp(video_path, timestamp_sec):
@@ -78,5 +87,7 @@ class Scene():
         fps = cap.get(cv2.CAP_PROP_FPS)
         # Calculate the frame number.
         frame_number = int(timestamp_sec * fps)
+        
+        cap.release()
 
         return frame_number

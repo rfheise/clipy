@@ -1,4 +1,4 @@
-from ..Utilities import Timestamp, TimeStamps, Logger, GhostCache
+from ..Utilities import Timestamp, TimeStamps, Logger, GhostCache, detect_scenes
 from .Clip import Clip
 
 class AutoCropper():
@@ -19,9 +19,10 @@ class AutoCropper():
     def crop(self):
         videos = []
         for t in self.timestamps:
-            clip = self.create_clip_from_video_file(t)
-            centers = self.detect_center_across_frames(clip)
-            clip.set_tracks(centers)
+            scenes = self.get_scenes_from_timestamp(t)
+            centers = self.detect_center_across_frames(scenes)
+            clip = Clip(centers)
+            # clip.set_tracks(centers)
             clip.crop()
             videos.append(clip)
         return videos
@@ -34,3 +35,19 @@ class AutoCropper():
         #TODO
         # crop clip using the speficied center for each frame
         pass
+
+    def get_scenes_from_timestamp(cls, video_file, timestamp, cache=GhostCache):
+        
+        #init clip with scenes
+        scenes = detect_scenes(video_file, cache=cache)
+        # get all scenes in interval
+        clip_scenes = []
+        for scene in scenes:
+            if scene.start <= timestamp.start and scene.end >= timestamp.start:
+                clip_scenes.append(scene)
+        
+        # shortend start and end scene
+        clip_scenes[0].trim_scene(timestamp)
+        clip_scenes[-1].trim_scene(timestamp)
+
+        return clip_scenes
