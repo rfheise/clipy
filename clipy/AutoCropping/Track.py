@@ -1,5 +1,6 @@
 
 from .Frame import Frame 
+import moviepy.editor as mp
 
 class Track():
 
@@ -11,7 +12,7 @@ class Track():
     def add(self, frame):
 
         self.frames.append(frame)
-    
+
     def crop(self):
         # TODO
         # implement crop for custom tracks

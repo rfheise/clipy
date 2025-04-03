@@ -1,25 +1,29 @@
-from ...Utilities import GhostCache, Logger
+from ...Utilities import GhostCache, Logger, Helper
 from ..AutoCropper import AutoCropper
-from .Face import Face, FacialTrack, write_video
+from .Face import Face, FacialTrack
 from ..Track import Track
 from collections import defaultdict
 from .s3fd import S3FD
 from tqdm import tqdm
 import os
 import moviepy.editor as mp
-
 import torch
+import cv2
+import numpy as np 
+from .TalkNet import TalkNet
+
 torch.set_num_threads(8)
 
 class AVASD(AutoCropper):
 
-    def __init__(self, video_path, clips, face_detection_model=S3FD, cache=GhostCache()):
+    def __init__(self, video_path, clips, face_detection_model=S3FD,avasd_model=TalkNet, cache=GhostCache()):
         super().__init__(video_path, clips, cache=cache)
         self.fdm = face_detection_model(device=Logger.device)
         #number of failed detections before face is rejected
         self.num_failed_det = 10
         self.min_frames_in_track = 20
         self.facial_tracks = None
+        self.avasd_model = avasd_model(Logger.device)
     
     def detect_center_across_frames(self, clip):
         
@@ -29,7 +33,13 @@ class AVASD(AutoCropper):
             self.facial_tracks = self.generate_facial_tracks(clip)
 
             # self.draw_bbox_around_facial_tracks('./.cache/tracks')
-            self.draw_bbox_around_scene(f"./.cache/scene.mp4")
+            self.draw_bbox_around_scene(f"./.cache/scene-low.mp4")
+
+            #TMP CODE WHILE DEVELOPING
+            #NEEDS TO BE REMOVED WHEN DONE
+            self.cache.save("./.cache/fd_test.sav")
+            exit()
+
 
             self.score_tracks(self.facial_tracks)
             self.cache.set_item("facial_tracks", self.facial_tracks)
@@ -54,12 +64,13 @@ class AVASD(AutoCropper):
             for track in scene:
                 track.load_frames(mode="render")
                 for frame in track.frames:
-                    frame.draw_bbox()
+                    if type(frame) == Face:
+                        frame.draw_bbox()
         
         frames = []
         for tracks in self.facial_tracks:
             frames.extend(tracks[0].scene.get_frames())
-        write_video(frames, "./.cache/scene.tmp.mp4")
+        Helper.write_video(frames, "./.cache/scene.tmp.mp4")
         new_video=mp.VideoFileClip("./.cache/scene.tmp.mp4")
         video = mp.VideoFileClip(self.video_file)
         audio = video.audio.subclip(self.facial_tracks[0][0].scene.start, self.facial_tracks[-1][0].scene.end)
@@ -72,9 +83,10 @@ class AVASD(AutoCropper):
     def score_tracks(self, facial_tracks):
 
         for track in facial_tracks:
-            score = self.get_score(track)
-            track.set_score(score)
-    
+            if track is type(FacialTrack):
+                score = self.get_score(track)
+                track.set_score(score)
+        
     def get_speakers_from_tracks(facial_tracks):
 
         #map tracks in scene
@@ -96,6 +108,9 @@ class AVASD(AutoCropper):
 
     
     def generate_facial_tracks(self, scenes):
+        
+        if self.cache.exists("gen_facial_tracks"):
+            return self.cache("gen_facial_tracks")
 
         clip_tracks = []
         Logger.log("Generating Facial Tracks")
@@ -127,13 +142,19 @@ class AVASD(AutoCropper):
             # keep only tracks that meet min frame req
             facial_tracks = [track for track in facial_tracks if len(track) >= self.min_frames_in_track]
             
+            #after tracks are processed interp
+            #the bboxes to remove gaps between frames
+            for track in facial_tracks:
+                track.interp_frames()
+            
             if len(facial_tracks) == 0:
 
                 facial_tracks = [Track.init_from_raw_frames(scene, frames)]
-        
+
             clip_tracks.append(facial_tracks)
             scene.free_frames()
         clip_tracks.sort(key = lambda x:x[0].frames[0].idx)
+        self.cache.set_item("gen_facial_tracks",clip_tracks,"dev")
         return clip_tracks
 
     def crop_frames_around_center(clip, centers):
@@ -154,10 +175,15 @@ class AVASD(AutoCropper):
 
         return faces
     
+
+    def get_score(self, track):
+        return self.avasd_model.get_score(track)
+            
+
 if __name__ == "__main__":
     from ...Utilities import Cache 
     from ...ContentHighlighting import ChatGPTHighlighter
-    video_path = "./videos/films/walk_the_line.mp4"
+    video_path = "./videos/shows/king_of_queens.mp4"
     cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
     cache.load(cache_file)

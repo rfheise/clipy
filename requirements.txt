@@ -7,3 +7,5 @@ openai
 torchaudio
 scenedetect
 opencv-python
+torchvision
+python-speech-features

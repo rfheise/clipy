@@ -44,9 +44,10 @@ class AutoCropper():
         clip_scenes = []
         for scene in scenes:
             if (scene.start >= timestamp.start and scene.start < timestamp.end) or \
-                (scene.end <= timestamp.end and scene.start > timestamp.start):
+                (scene.end <= timestamp.end and scene.start > timestamp.start) or \
+                (scene.start < timestamp.start and scene.end > timestamp.end):
                 clip_scenes.append(scene)
-        
+
         # shortend start and end scene
         clip_scenes[0].trim_scene(timestamp)
         clip_scenes[-1].trim_scene(timestamp)

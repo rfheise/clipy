@@ -1,9 +1,11 @@
 from ..Track import Track 
 from ..Frame import Frame 
-from ...Utilities import Logger
+from ...Utilities import Logger, Helper
 import cv2 
 import moviepy.editor as mp
 import os
+from scipy.interpolate import interp1d
+import numpy as np 
 
 class Face(Frame):
     
@@ -47,7 +49,7 @@ class Face(Frame):
         y = int((self.bbox[3] + self.bbox[1])/2)
         b_width = self.bbox[2] - self.bbox[0]
         b_height= self.bbox[3] - self.bbox[1]
-        draw_box_on_frame(self.cv2, (x,y), (b_width, b_height))
+        Helper.draw_box_on_frame(self.cv2, (x,y), (b_width, b_height))
 
 
 
@@ -79,62 +81,62 @@ class FacialTrack(Track):
             return -1
         return self.frames[-1].idx
     
+    def crop_cv2(self):
+        if self.cv2 is None:
+            Logger.log_error("cv2 not loaded")
+            exit(2)
+        self.cv2 = self.cv2[int(self.bbox[0]):int(self.bbox[2]),int(self.bbox[1]):int(self.bbox[3])]
     
     def render_bbox_video(self, fname):
 
         self.load_frames(mode = "render")
         for face in self.frames:
             face.draw_bbox()
-        write_video(self.scene.frames, fname + ".tmp.mp4")
+        Helper.write_video(self.scene.frames, fname + ".tmp.mp4")
         self.free_frames()
         new_video=mp.VideoFileClip(fname + ".tmp.mp4")
         new_video.audio = self.scene.get_audio()
         new_video.write_videofile(fname, codec="libx264", audio_codec="aac")
         os.remove(fname + ".tmp.mp4")
         self.scene.free_audio()
+    
+    def interp_frames(self):
+
+        bboxes = np.array([np.array(face.bbox) for face in self.frames])
+        frame_nums = np.array([face.idx for face in self.frames])
+        conf = np.array([face.conf for face in self.frames])
+
+        dim_funcs = []
+        for i in range(4):
+            #interp dim along bbox
+            interpfn  = interp1d(frame_nums, bboxes[:,i], bounds_error="False", fill_value="extrapolate")
+            dim_funcs.append(interpfn)
+    
+        conf_func = interp1d(frame_nums, conf, bounds_error="False", fill_value="extrapolate")
+        
+        for i,frame in enumerate(self.scene.get_frames()):
+            
+            setinel = False
+            for face in self.frames:
+                
+                if face.idx == i:
+                    for j in range(4):
+                        face.bbox[j] = dim_funcs[j](face.idx)
+                    face.conf = conf_func(face.idx)
+                    setinel = True
+                    break 
+            if not setinel:
+            
+                new_face = Face.init_from_cv2_frame(frame, i + self.scene.frame_start)
+                bbox = []
+                conf = conf_func(face.idx)
+                for j in range(4):
+                    bbox.append(dim_funcs[j](new_face.idx))
+                new_face.set_face_detection_args(bbox, conf)
+                self.frames.insert(i, new_face)
+            
+            
+    
 
 
 
-def draw_box_on_frame(frame, center, box_size=(100, 100), color=(0, 0, 0), thickness=2):
-    """
-    Draws a rectangle (box) on the frame with the center at 'center'.
-    
-    Parameters:
-      frame (numpy.ndarray): The input image (frame).
-      center (tuple): The (x, y) coordinates of the center of the box.
-      box_size (tuple): The (width, height) of the box.
-      color (tuple): The BGR color for the box.
-      thickness (int): The thickness of the box lines.
-    
-    Returns:
-      numpy.ndarray: The modified frame with the drawn box.
-    """
-    x, y = center
-    width, height = box_size
-    # Calculate top-left and bottom-right coordinates from the center point.
-    top_left = (int(x - width / 2), int(y - height / 2))
-    bottom_right = (int(x + width / 2), int(y + height / 2))
-    # Make a copy so the original frame is not modified.
-    # frame_with_box = frame.copy()
-    frame_with_box = frame
-    cv2.rectangle(frame_with_box, top_left, bottom_right, color, thickness)
-    return frame_with_box
-
-def write_video(frames, output_path, fps=24):
-    """
-    Writes a list of frames (numpy arrays) to a video file.
-    
-    Parameters:
-      frames (list): List of frames (numpy arrays).
-      output_path (str): Path to the output video file.
-      fps (int): Frames per second for the output video.
-    """
-    # Get dimensions from the first frame.
-    height, width = frames[0].shape[:2]
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
-    video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    
-    for frame in frames:
-        video_writer.write(frame)
-    
-    video_writer.release()

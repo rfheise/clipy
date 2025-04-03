@@ -41,6 +41,18 @@ class Scene():
         self.audio = None
         self.idx = Scene.counter 
         Scene.counter += 1
+        self._fps = None
+
+    @property
+    def fps(self):
+        if self._fps is None:
+            # Open the video file.
+            cap = cv2.VideoCapture(self.video_file)
+
+            # Get frames per second (FPS) of the video.
+            self._fps = cap.get(cv2.CAP_PROP_FPS)
+            cap.release()
+        return self._fps
 
     @classmethod
     def init_from_pyscene(cls, fname, scene):
@@ -85,7 +97,10 @@ class Scene():
     def get_audio(self):
         if self.audio is None:
             self.load_audio()
-        return self.audio
+        audio = self.audio 
+        #incase I need load-free functionality
+        self.free_audio()
+        return audio
     
     def load_audio(self):
         video = mp.VideoFileClip(self.video_file)
@@ -107,6 +122,5 @@ class Scene():
         # Calculate the frame number.
         frame_number = round(timestamp_sec * fps)
 
-        cap.release()
 
         return frame_number
