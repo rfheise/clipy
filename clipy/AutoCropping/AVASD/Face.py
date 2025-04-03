@@ -61,7 +61,7 @@ class FacialTrack(Track):
         super().add(face)
     
     @property
-    def last_index(self):
+    def last_idx(self):
 
         if len(self.frames) == 0:
             return -1

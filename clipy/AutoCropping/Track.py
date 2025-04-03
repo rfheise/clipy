@@ -9,8 +9,8 @@ class Track():
         self.frames = []
 
     def add(self, frame):
-        
-        self.frames.add(frame)
+
+        self.frames.append(frame)
     
     def crop(self):
         # TODO
@@ -22,5 +22,8 @@ class Track():
     @classmethod
     def init_from_raw_frames(cls, scene, frames):
         track = cls(scene)
-        for frame in frames:
-            track.add(Frame.init_from_cv2_frame(frame))
+        for i, frame in enumerate(frames):
+            track.add(Frame.init_from_cv2_frame(frame, scene.frame_start + i))
+    
+    def __len__(self):
+        return len(self.frames)

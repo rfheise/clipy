@@ -35,6 +35,7 @@ class Scene():
         self.frame_end = frame_end
         self.video_file = video_file
         self.cap = None
+        self.frames = None
 
     @classmethod
     def init_from_pyscene(cls, fname, scene):
@@ -48,14 +49,14 @@ class Scene():
         
         if timestamp.start > self.start:
             self.start  = timestamp.start 
-            self.frame_start = Scene.get_frame_at_timestamp(timestamp.start)
+            self.frame_start = Scene.get_frame_at_timestamp(self.video_file, timestamp.start)
         if timestamp.end < self.end:
             self.end = timestamp.end 
-            self.frame_end = Scene.get_frame_at_timestamp(timestamp.end)
+            self.frame_end = Scene.get_frame_at_timestamp(self.video_file, timestamp.end)
     
     def get_frames(self):
         if self.frames is None:
-            self.frames = self.load_frames()
+            self.load_frames()
         return self.frames 
 
     def free_frames(self):
@@ -63,9 +64,9 @@ class Scene():
 
     def load_frames(self):
         self.frames = []
-        cap = cv2.VideoCapture(self.video_path)
+        cap = cv2.VideoCapture(self.video_file)
+        Logger.debug(f"{self.start}, {self.end}, {self.frame_start}, {self.frame_end}")
         cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_start)
-
         for i in range(self.frame_start, self.frame_end + 1):
             ret, frame = cap.read()
             if not ret:
@@ -86,8 +87,8 @@ class Scene():
         # Get frames per second (FPS) of the video.
         fps = cap.get(cv2.CAP_PROP_FPS)
         # Calculate the frame number.
-        frame_number = int(timestamp_sec * fps)
-        
+        frame_number = round(timestamp_sec * fps)
+
         cap.release()
 
         return frame_number

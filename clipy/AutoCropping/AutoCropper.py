@@ -3,12 +3,12 @@ from .Clip import Clip
 
 class AutoCropper():
 
-    def __init__(self, video_file, timestamps, cache=GhostCache):
+    def __init__(self, video_file, timestamps, cache=GhostCache()):
 
         self.video_file = video_file
         self.timestamps = timestamps
         self.cache = cache 
-    
+
     def detect_center_across_frames(self, clip):
 
         #TODO
@@ -19,7 +19,7 @@ class AutoCropper():
     def crop(self):
         videos = []
         for t in self.timestamps:
-            scenes = self.get_scenes_from_timestamp(t)
+            scenes = self.get_scenes_from_timestamp(self.video_file, t, self.cache)
             centers = self.detect_center_across_frames(scenes)
             clip = Clip(centers)
             # clip.set_tracks(centers)
@@ -28,16 +28,17 @@ class AutoCropper():
         return videos
     
     def create_clip_from_video_file(self, timestamp):
-        return Clip.initalize_clip(self.video_file, timestamp, self.cache)
+        return Clip.initalize_clip(self.video_file, timestamp, cache=self.cache)
 
     def crop_frames_around_center(clip, centers):
 
         #TODO
         # crop clip using the speficied center for each frame
         pass
-
-    def get_scenes_from_timestamp(cls, video_file, timestamp, cache=GhostCache):
-        
+    
+    @staticmethod
+    def get_scenes_from_timestamp(video_file, timestamp, cache=GhostCache()):
+        print(cache.exists("scenes"))
         #init clip with scenes
         scenes = detect_scenes(video_file, cache=cache)
         # get all scenes in interval
@@ -51,3 +52,10 @@ class AutoCropper():
         clip_scenes[-1].trim_scene(timestamp)
 
         return clip_scenes
+    
+    @staticmethod
+    def get_total_frames(scenes):
+        total_frames = 0
+        for scene in scenes:
+            total_frames += scene.frame_end - scene.frame_start + 1
+        return total_frames
