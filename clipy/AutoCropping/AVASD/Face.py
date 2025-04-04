@@ -14,6 +14,13 @@ class Face(Frame):
         self.bbox = None 
         self.conf = None
     
+    def crop_cv2(self):
+        if self.cv2 is None:
+            Logger.log_error("cv2 not loaded")
+            exit(2)
+        self.cv2 = self.cv2[int(self.bbox[0]):int(self.bbox[2]),int(self.bbox[1]):int(self.bbox[3])]
+        return self.cv2 
+    
     def set_face_detection_args(self, bbox, conf):
 
         self.bbox = bbox 
@@ -42,14 +49,14 @@ class Face(Frame):
 
         return iou
     
-    def draw_bbox(self):
+    def draw_bbox(self,color=(0,0,0)):
         if self.cv2 is None:
             Logger.log_error("cv2 Frames Not Loaded")   
         x = int((self.bbox[2] + self.bbox[0])/2)
         y = int((self.bbox[3] + self.bbox[1])/2)
         b_width = self.bbox[2] - self.bbox[0]
         b_height= self.bbox[3] - self.bbox[1]
-        Helper.draw_box_on_frame(self.cv2, (x,y), (b_width, b_height))
+        Helper.draw_box_on_frame(self.cv2, (x,y), (b_width, b_height), color=color)
 
 
 
@@ -62,6 +69,12 @@ class FacialTrack(Track):
 
     def set_score(self, score):
         self.score = score
+    
+    def get_score(self):
+        if self.score is None:
+            Logger.log_error("score not processed")
+            exit(3)
+        return self.score
 
     def contains_face(self, face):
 
@@ -80,12 +93,6 @@ class FacialTrack(Track):
         if len(self.frames) == 0:
             return -1
         return self.frames[-1].idx
-    
-    def crop_cv2(self):
-        if self.cv2 is None:
-            Logger.log_error("cv2 not loaded")
-            exit(2)
-        self.cv2 = self.cv2[int(self.bbox[0]):int(self.bbox[2]),int(self.bbox[1]):int(self.bbox[3])]
     
     def render_bbox_video(self, fname):
 
@@ -109,17 +116,17 @@ class FacialTrack(Track):
         dim_funcs = []
         for i in range(4):
             #interp dim along bbox
-            interpfn  = interp1d(frame_nums, bboxes[:,i], bounds_error="False", fill_value="extrapolate")
+            interpfn  = interp1d(frame_nums, bboxes[:,i], bounds_error=False, fill_value="extrapolate")
             dim_funcs.append(interpfn)
     
-        conf_func = interp1d(frame_nums, conf, bounds_error="False", fill_value="extrapolate")
+        conf_func = interp1d(frame_nums, conf, bounds_error=False, fill_value="extrapolate")
         
         for i,frame in enumerate(self.scene.get_frames()):
             
             setinel = False
             for face in self.frames:
                 
-                if face.idx == i:
+                if face.idx == i + self.scene.frame_start:
                     for j in range(4):
                         face.bbox[j] = dim_funcs[j](face.idx)
                     face.conf = conf_func(face.idx)

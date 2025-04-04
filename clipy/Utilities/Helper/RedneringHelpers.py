@@ -1,3 +1,5 @@
+import cv2 
+
 def draw_box_on_frame(frame, center, box_size=(100, 100), color=(0, 0, 0), thickness=2):
     """
     Draws a rectangle (box) on the frame with the center at 'center'.

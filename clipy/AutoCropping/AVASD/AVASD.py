@@ -27,23 +27,28 @@ class AVASD(AutoCropper):
     
     def detect_center_across_frames(self, clip):
         
+        self.cache.clear("facial_tracks")
         if self.cache.exists("facial_tracks"):
             self.facial_tracks = self.cache.get_item("facial_tracks")
         else:
             self.facial_tracks = self.generate_facial_tracks(clip)
 
             # self.draw_bbox_around_facial_tracks('./.cache/tracks')
-            self.draw_bbox_around_scene(f"./.cache/scene-low.mp4")
+            # self.draw_bbox_around_scene(f"./.cache/scene-low.mp4")
 
             #TMP CODE WHILE DEVELOPING
             #NEEDS TO BE REMOVED WHEN DONE
-            self.cache.save("./.cache/fd_test.sav")
-            exit()
+            # self.cache.save("./.cache/fd_test.sav")
+            
 
 
             self.score_tracks(self.facial_tracks)
             self.cache.set_item("facial_tracks", self.facial_tracks)
+            import random
+            self.draw_bbox_around_scene(f"./.cache/scene-{random.randint(0,10000)}.mp4")
+            return
         #speakers is list of lists of centers in case there are multiple speakers
+        
         speakers = self.get_speakers_from_tracks(self.facial_tracks)
         return speakers
     
@@ -62,10 +67,16 @@ class AVASD(AutoCropper):
         #definitely needs re-done
         for scene in self.facial_tracks:
             for track in scene:
+                track.free_frames()
+        for scene in self.facial_tracks:
+            for track in scene:
                 track.load_frames(mode="render")
                 for frame in track.frames:
                     if type(frame) == Face:
-                        frame.draw_bbox()
+                        color = (0,0,255)
+                        if track.get_score() > 0:
+                            color = (0,255,0)
+                        frame.draw_bbox(color=color)
         
         frames = []
         for tracks in self.facial_tracks:
@@ -82,10 +93,12 @@ class AVASD(AutoCropper):
 
     def score_tracks(self, facial_tracks):
 
-        for track in facial_tracks:
-            if track is type(FacialTrack):
-                score = self.get_score(track)
-                track.set_score(score)
+        for tracks in facial_tracks:
+            for track in tracks:
+                if type(track) is FacialTrack:
+                    print("here")
+                    score = self.get_score(track)
+                    track.set_score(score)
         
     def get_speakers_from_tracks(facial_tracks):
 
@@ -110,7 +123,7 @@ class AVASD(AutoCropper):
     def generate_facial_tracks(self, scenes):
         
         if self.cache.exists("gen_facial_tracks"):
-            return self.cache("gen_facial_tracks")
+            return self.cache.get_item("gen_facial_tracks")
 
         clip_tracks = []
         Logger.log("Generating Facial Tracks")
@@ -145,7 +158,9 @@ class AVASD(AutoCropper):
             #after tracks are processed interp
             #the bboxes to remove gaps between frames
             for track in facial_tracks:
+                print(len(track.frames))
                 track.interp_frames()
+                print(len(track.frames))
             
             if len(facial_tracks) == 0:
 
@@ -183,16 +198,17 @@ class AVASD(AutoCropper):
 if __name__ == "__main__":
     from ...Utilities import Cache 
     from ...ContentHighlighting import ChatGPTHighlighter
-    video_path = "./videos/shows/king_of_queens.mp4"
+    video_path = "./videos/films/walk_the_line.mp4"
     cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
     cache.load(cache_file)
     # cache.clear('highlight')
     # cache.clear('scenes')
     # cache.clear()
-    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache, sub_model="tiny.en")
+    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
     intervals = highlighter.highlight_intervals()
     cache.save(cache_file)
+    
     #don't cache AVASD quite yet
     cropper = AVASD(video_path, intervals, cache=cache)
     cropper.crop()

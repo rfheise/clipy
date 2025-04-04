@@ -21,6 +21,7 @@ class AutoCropper():
         for t in self.timestamps:
             scenes = self.get_scenes_from_timestamp(self.video_file, t, self.cache)
             centers = self.detect_center_across_frames(scenes)
+            continue
             clip = Clip(centers)
             # clip.set_tracks(centers)
             clip.crop()
