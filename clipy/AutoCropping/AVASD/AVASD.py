@@ -11,6 +11,7 @@ import torch
 import cv2
 import numpy as np 
 from .TalkNet import TalkNet
+import random 
 
 torch.set_num_threads(8)
 
@@ -28,6 +29,7 @@ class AVASD(AutoCropper):
     def detect_center_across_frames(self, clip):
         
         self.cache.clear("facial_tracks")
+        # self.cache.clear("gen_facial_tracks")
         if self.cache.exists("facial_tracks"):
             self.facial_tracks = self.cache.get_item("facial_tracks")
         else:
@@ -38,18 +40,16 @@ class AVASD(AutoCropper):
 
             #TMP CODE WHILE DEVELOPING
             #NEEDS TO BE REMOVED WHEN DONE
-            # self.cache.save("./.cache/fd_test.sav")
-            
+            self.cache.save("./.cache/fd_test.sav")
 
 
             self.score_tracks(self.facial_tracks)
             self.cache.set_item("facial_tracks", self.facial_tracks)
-            import random
             self.draw_bbox_around_scene(f"./.cache/scene-{random.randint(0,10000)}.mp4")
-            return
         #speakers is list of lists of centers in case there are multiple speakers
         
         speakers = self.get_speakers_from_tracks(self.facial_tracks)
+        exit()
         return speakers
     
     def draw_bbox_around_facial_tracks(self, dirname):
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     # cache.clear('highlight')
     # cache.clear('scenes')
     # cache.clear()
-    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
+    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache, sub_model="tiny.en")
     intervals = highlighter.highlight_intervals()
     cache.save(cache_file)
     

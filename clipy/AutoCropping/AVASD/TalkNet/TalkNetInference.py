@@ -6,12 +6,14 @@ import math
 from scipy.io import wavfile
 import torch 
 import os
+from ....Utilities import Logger
 
 class TalkNetInference():
     PATH_WEIGHT = os.path.join(os.path.dirname(__file__), "talknet.model")
     def __init__(self, device):
         self.model = talkNet(device)
-        self.model.loadParameters(TalkNetInference.PATH_WEIGHT)
+        if Logger.device == "cuda":
+            self.model.loadParameters(TalkNetInference.PATH_WEIGHT)
         self.winstep = 0.010
         self.device = device
 
@@ -94,20 +96,29 @@ class TalkNetInference():
             bbox.append(y - bbox_height/2)
             bbox.append(x + bbox_width/2)
             bbox.append(y + bbox_height/2)
-            frame.bbox = bbox
-            # frame.cv2 = frame.crop_cv2()
-            bsi = int(bs * (1 + 2 * cs))
-            frame.cv2 = np.pad(frame.cv2, ((bsi,bsi), (bsi,bsi), (0, 0)), 'constant', constant_values=(110, 110))
-            my = y + bsi 
-            mx = x + bsi
-            frame.cv2 = frame.cv2[int(my-bs):int(my+bs*(1+2*cs)),int(mx-bs*(1+cs)):int(mx+bs*(1+cs))]
+            # frame.bbox = bbox
+            if Logger.debug:
+                os.makedirs(f"./.cache/talknet-inputs/{track.scene.idx}", exist_ok=True)
+                cv2.imwrite(f"./.cache/talknet-inputs/{track.scene.idx}/{frame.idx}.jpg", frame.cv2)
+            frame.cv2 = frame.crop_cv2()
+            # bsi = int(bs * (1 + 2 * cs))
+            # frame.cv2 = np.pad(frame.cv2, ((bsi,bsi), (bsi,bsi), (0, 0)), 'constant', constant_values=(110, 110))
+            # my = y + bsi 
+            # mx = x + bsi
+            # frame.cv2 = frame.cv2[int(my-bs):int(my+bs*(1+2*cs)),int(mx-bs*(1+cs)):int(mx+bs*(1+cs))]
             frame.cv2 = cv2.cvtColor(frame.cv2, cv2.COLOR_BGR2GRAY)
             # print(frame.cv2.shape)
             frame.cv2 = cv2.resize(frame.cv2, (244, 244))
             #idk why he only uses half the resized frame?
             #probably for efficiency
             #need to read paper
-            frame.cv2 = frame.cv2[int(112-(112/2)):int(112+(112/2)), int(112-(112/2)):int(112+(112/2))]
+            # frame.cv2 = frame.cv2[int(112-(112/2)):int(112+(112/2)), int(112-(112/2)):int(112+(112/2))]
             #resize in case crop messed it up
             # frame.cv2 = frame.cv2.resize(frame.cv2, (112,112))
+            
+            # if Logger.debug:
+            #     os.makedirs(f"./.cache/talknet-inputs/{track.scene.idx}", exist_ok=True)
+            #     cv2.imwrite(f"./.cache/talknet-inputs/{track.scene.idx}/{frame.idx}.jpg", frame.cv2)
+        exit()
+
         return np.array([frame.cv2 for frame in track.frames])
