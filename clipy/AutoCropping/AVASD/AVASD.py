@@ -26,14 +26,24 @@ class AVASD(AutoCropper):
         self.avasd_model = avasd_model(Logger.device)
     
     def detect_tracks_in_scenes(self, clip):
-
+        
+        # self.cache.clear(f"clip-{clip.id}-scenes")
+        Logger.debug(str(clip.get_timestamp()))
+        if self.cache.get_item(f"clip-{clip.id}-scenes") is not None:
+            scenes = self.cache.get_item(f"clip-{clip.id}-scenes")
+            clip.set_scenes(scenes)
+            Logger.debug(f"Loading Clip {clip.id} from cache")
+            return
         
         self.generate_facial_tracks(clip.get_scenes())
-        self.score_tracks(clip.get_scenes())
+        self.score_tracks(clip.get_scenes(), clip.id)
         if Logger.debug_mode:
             Logger.debug(f"Saving Bounding Boxes For Clip")
             os.makedirs("./debug/bboxes", exist_ok=True)
             self.draw_bbox_around_scene( f"./debug/bboxes/bboxes-{clip.id}.mp4", clip.get_scenes())
+        self.cache.set_item(f"clip-{clip.id}-scenes", clip.get_scenes(), level="dev")
+        self.cache.save()
+        
     
     def draw_bbox_around_facial_tracks(self, dirname, scenes):
         
@@ -75,7 +85,7 @@ class AVASD(AutoCropper):
         
         
 
-    def score_tracks(self, scenes):
+    def score_tracks(self, scenes, clip_id=0):
         Logger.log("Detecting Speakers In Tracks")
 
         total = 0
@@ -86,7 +96,7 @@ class AVASD(AutoCropper):
         for tracks in scenes:
             for track in tracks:
                 if type(track) is FacialTrack:
-                    score = self.get_score(track)
+                    score = self.get_score(track, clip_id)
                     for i,frame in enumerate(track.frames):
                         s = score[max(i - 2, 0):min(i + 3, len(track.frames))]
                         frame.set_score(s.mean())
@@ -150,8 +160,8 @@ class AVASD(AutoCropper):
         return faces
     
 
-    def get_score(self, track):
-        return self.avasd_model.get_score(track)
+    def get_score(self, track, clip_id):
+        return self.avasd_model.get_score(track, clip_id)
             
 
 if __name__ == "__main__":
@@ -160,16 +170,16 @@ if __name__ == "__main__":
     video_path = "./videos/other/walk_the_line_25_16.mp4"
     cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
+    cache.set_save_file(cache_file)
     cache.load(cache_file)
     # cache.clear('highlight')
     # cache.clear('scenes')
     # cache.clear()
     highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
     intervals = highlighter.highlight_intervals()
-    cache.save(cache_file)
-    intervals.insert(0,Timestamp(1498,1546))
+    # intervals.insert(0,Timestamp(1498,1546))
+    # cache.save(cache_file)
     # intervals = [Timestamp(1498,1546)]
-    
     #don't cache AVASD quite yet
     cropper = AVASD(video_path, intervals, cache=cache)
     cropper.crop()

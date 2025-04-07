@@ -41,8 +41,25 @@ class Face(Frame):
         self.set_bbox(bbox)
         self.conf = conf
 
+    def crop_bbox(self, bbox):
+        bbox[0] = max(bbox[0],0)
+        bbox[1] = max(bbox[1],0)
+        bbox[2] = min(bbox[2], self.width)
+        bbox[3] = min(bbox[3], self.height)
+        return bbox
+    
     def set_bbox(self, bbox):
-        
+
+        bbox = self.crop_bbox(bbox)
+        if int(bbox[0]) == int(bbox[2]):
+            bbox[0] -= 1
+            bbox[2] += 1
+        if int(bbox[1]) == int(bbox[3]):
+            bbox[1] -= 1
+            bbox[3] += 1
+        bbox = self.crop_bbox(bbox)
+
+
         self.bbox = bbox 
         x = int((self.bbox[2] + self.bbox[0])/2)
         y = int((self.bbox[3] + self.bbox[1])/2)
@@ -139,8 +156,10 @@ class FacialTrack(Track):
             for face in self.frames:
                 
                 if face.idx == i + self.scene.frame_start:
+                    bbox = []
                     for j in range(4):
-                        face.bbox[j] = dim_funcs[j](face.idx)
+                        bbox.append(dim_funcs[j](face.idx))
+                    face.set_bbox(bbox)
                     face.conf = conf_func(face.idx)
                     setinel = True
                     break 

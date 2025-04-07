@@ -22,19 +22,19 @@ class TalkNetInference():
         self.winstep = 0.010
         self.device = device
 
-    def get_score(self, track):
+    def get_score(self, track, clip_id=0):
         track.rand = random.randint(0,10**8)
 
         video = self.load_frames_for_avasd(track)
         audio = self.load_audio_for_avasd(track)
         if Logger.debug_mode:
-            self.write_out(video, track.scene.get_audio(), track.scene.fps, track)
+            self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip_id)
             score = self.eval_model(video, audio, track.scene.fps)
         return score
     
-    def write_out(self, video, audio,fps, track):
-        os.makedirs(f"./debug/talknet-inputs/{track.scene.idx}", exist_ok=True)
-        out_video = f"./debug/talknet-inputs/{track.scene.idx}/video.mp4"
+    def write_out(self, video, audio,fps, track, clip_id):
+        os.makedirs(f"./debug/talknet-inputs/{clip_id}/{track.scene.idx}", exist_ok=True)
+        out_video = f"./debug/talknet-inputs/{clip_id}/{track.scene.idx}/video.mp4"
         Helper.write_video(video, "./debug/scene-track.tmp.mp4",fps=fps)
         new_video=mp.VideoFileClip("./debug/scene-track.tmp.mp4")
         new_video.audio = audio
@@ -151,6 +151,7 @@ class TalkNetInference():
             bbox.append(y + bbox_height/2)
             frame.set_bbox(bbox)
             
+            # print(bbox)
             # try:    
                
             # frame.cv2 = frame.crop_cv2()
@@ -159,10 +160,26 @@ class TalkNetInference():
             frame.cv2 = np.pad(frame.cv2, ((bsi,bsi), (bsi,bsi), (0, 0)), 'constant', constant_values=(110, 110))
             my = y + bsi 
             mx = x + bsi
-            frame.cv2 = frame.cv2[int(my-bs):int(my+bs*(1+2*cs)),int(mx-bs*(1+cs)):int(mx+bs*(1+cs))]
+
+            ys = max(int(my-bs),0)
+            ye = min(int(my+bs*(1+2*cs)), frame.cv2.shape[0])
+            xs = max(int(mx-bs*(1+cs)),0)
+            xe = min(int(mx+bs*(1+cs)),frame.cv2.shape[1])
+            if xs == xe:
+                if xe == 0:
+                    xe = 1 
+                if xs == frame.cv2.shape[1]:
+                    xs = frame.cv2.shape[1] - 1
+            if ys == ye:
+                if ys == frame.cv2.shape[0]:
+                    ys = frame.cv2.shape[0]  -1 
+                if ye == 0:
+                    ye = 1
+            frame.cv2 = frame.cv2[ys:ye, xs:xe]
             # print("frame")
             # print(frame.bbox)
             # print(int(my-bs),int(my+bs*(1+2*cs)),int(mx-bs*(1+cs)),int(mx+bs*(1+cs)))
+            # print(frame.cv2.shape)
             frame.cv2 = cv2.resize(frame.cv2, (224, 224))
             frame.cv2 = cv2.cvtColor(frame.cv2, cv2.COLOR_BGR2GRAY)
             frame.cv2 = cv2.resize(frame.cv2, (224,224))

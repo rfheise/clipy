@@ -64,3 +64,6 @@ class Clip():
         for scene in self.scenes:
             scene.set_centers()
     
+    def set_scenes(self, scenes):
+        self.scenes = scenes
+    

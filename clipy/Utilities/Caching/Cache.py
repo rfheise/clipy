@@ -21,6 +21,7 @@ class Cache():
                     pass 
         
         self.init_cache()
+        self.save_file = None
         
     def get_item(self, key):
 
@@ -45,10 +46,12 @@ class Cache():
         else:
             self.cache = None
 
-    def load(self, fname):
+    def load(self, fname=None):
+        if self.save_file is not None:
+            fname = self.save_file
         Logger.debug("Loading Cache")
         #should work for now but need to improve later 
-        if not os.path.exists(fname):
+        if fname is None or not os.path.exists(fname):
             Logger.log_warning("Cache File Does Not Exist Skipping Initialization")
             return 
         
@@ -58,7 +61,12 @@ class Cache():
         if self.cache is None:
             Logger.log_warning("Cache set to None after load")
         
-    def save(self, fname):
+    def save(self, fname=None):
+        if self.save_file is not None:
+            fname = self.save_file
+        if fname is None:
+            Logger.log_warning("Cache File Not Specified")
+            return
         Logger.debug("Saving Cache")
         with open(fname, 'wb') as f:
             pickle.dump(self.cache, f)
@@ -69,6 +77,9 @@ class Cache():
             self.init_cache()
         else:
             self.set_item(key, None)
+
+    def set_save_file(self, fname):
+        self.save_file = fname
 
 class GhostCache(Cache):
 
