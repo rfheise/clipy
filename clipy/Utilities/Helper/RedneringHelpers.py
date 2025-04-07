@@ -1,4 +1,9 @@
 import cv2 
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np 
+
+#this whole file was vibe coded with gpt 
+#lol I don't want to actually learn how to use cv2
 
 def draw_box_on_frame(frame, center, box_size=(100, 100), color=(0, 0, 0), thickness=2):
     """
@@ -44,3 +49,93 @@ def write_video(frames, output_path, fps):
     for frame in frames:
         video_writer.write(frame)
     video_writer.release()
+
+def get_text_size(text, font):
+    """
+    Returns the width and height of the text using the font's bounding box.
+    """
+    # getbbox returns (left, top, right, bottom)
+    bbox = font.getbbox(text)
+    width = bbox[2] - bbox[0]
+    height = bbox[3] - bbox[1]
+    return width, height
+
+def wrap_text_pil(text, font, max_width):
+    """
+    Wraps text into a list of lines such that each line's width does not exceed max_width.
+    """
+    words = text.split()
+    lines = []
+    current_line = ""
+    
+    for word in words:
+        test_line = current_line + (" " if current_line else "") + word
+        line_width, _ = get_text_size(test_line, font)
+        if line_width <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
+    return lines
+
+def draw_wrapped_text(frame, text, center, font_path, font_size, color, max_width, line_spacing=4):
+    """
+    Draws wrapped text on the given OpenCV frame using a custom TrueType font.
+    The text is wrapped if necessary so that no line exceeds max_width, and the
+    entire text block is centered on the given center coordinates.
+
+    Parameters:
+      frame: OpenCV image (BGR).
+      text: Text string to draw.
+      center: Tuple (x, y) that is the center of the text block.
+      font_path: Path to the .ttf file for the custom font.
+      font_size: Font size.
+      color: Text color in RGB.
+      max_width: Maximum width in pixels for wrapping text.
+      line_spacing: Additional vertical spacing between lines.
+    
+    Returns:
+      OpenCV image with text drawn on it.
+    """
+    # Convert the OpenCV BGR image to a PIL RGB image.
+    pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(pil_img)
+    
+    # Load the custom font.
+    font = ImageFont.truetype(font_path, font_size)
+    
+    # Wrap the text.
+    lines = wrap_text_pil(text, font, max_width)
+    
+    # Calculate block dimensions.
+    line_widths = []
+    line_heights = []
+    total_height = 0
+    for line in lines:
+        w, h = get_text_size(line, font)
+        line_widths.append(w)
+        line_heights.append(h)
+        total_height += h
+    # Add spacing between lines.
+    total_height += line_spacing * (len(lines) - 1)
+    
+    # For horizontal centering, we use the maximum line width.
+    block_width = max(line_widths) if line_widths else 0
+    
+    # Compute the top-left coordinate of the text block.
+    top_left_x = int(center[0] - block_width / 2)
+    top_left_y = int(center[1] - total_height / 2)
+    
+    # Draw each line centered horizontally relative to the center.
+    y = top_left_y
+    for i, line in enumerate(lines):
+        line_width = line_widths[i]
+        x = int(center[0] - line_width / 2)
+        draw.text((x, y), line, font=font, fill=color)
+        y += line_heights[i] + line_spacing
+
+    # Convert the PIL image back to OpenCV BGR format.
+    return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)

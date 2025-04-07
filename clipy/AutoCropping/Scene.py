@@ -137,21 +137,33 @@ class Scene():
                 if frame.get_score() is None:
                     Logger.log_error("score not processed")
                     exit(3)
+        speakers = []
         for track in self.tracks:
             if track.is_speaker():
+                speakers.append(track)
                 num_speakers += 1
-        if len(self.tracks) == 1 or num_speakers == 1:
+        if len(self.tracks) == 1:
             return self.tracks[0].get_center()
+        if num_speakers == 1:
+            return speakers[0].get_center()
         return self.tracks[0].get_center_of_frames()
     
     def set_centers(self):
 
         t = type(self.tracks[0])
         if t is FacialTrack:
-            self.centers = self.get_centers_from_facial_tracks()
+            self.centers = [self.get_centers_from_facial_tracks()]
         else:
-            self.centers = self.tracks[0].get_center()
-    
+            self.centers = [self.tracks[0].get_center()]
+
+    def get_center(self):
+
+        #gets first center in scene 
+        if self.centers is None:
+            Logger.log_error("Centers Not Set")
+            exit(75)
+        return self.centers[0]
+
     def free_frames_from_tracks(self):
         self.frames = None
         for track in self:

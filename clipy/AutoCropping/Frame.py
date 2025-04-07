@@ -29,7 +29,7 @@ class Frame():
     def init_from_cv2_frame(cls, frame, frame_idx):
 
         height, width =  frame.shape[:2]
-        center = (height//2, width//2)
+        center = (width//2, height//2)
         return cls(frame_idx, center, width, height)
 
     def crop_frame(self, crop_algo):

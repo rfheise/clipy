@@ -118,8 +118,16 @@ class SubtitleGenerator():
                 self.__audio_file = self.fname
         return self.__audio_file
     
-    def get_subtitles(self):
-        return self.subtitles
+    def get_subtitles(self, timestamp = None):
+        if timestamp is None:
+            return self.subtitles
+        ret= []
+        for subtitle in self.subtitles:
+            if subtitle.timestamp.start > timestamp.start:
+                ret.append(subtitle)
+            if subtitle.timestamp.start > timestamp.end:
+                break
+        return ret 
     
     def add_subtitle(self, subtitle):
         self.subtitles.append(subtitle)

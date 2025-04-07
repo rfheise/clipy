@@ -92,3 +92,11 @@ class Timestamp:
     def __str__(self):
 
         return f"{self.start} --> {self.end}"
+    
+    def get_start_frame(self,fps):
+
+        return round(fps * self.start)
+    
+    def get_end_frame(self, fps):
+
+        return round(fps * self.end)

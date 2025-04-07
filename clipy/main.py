@@ -1,6 +1,6 @@
 from .ContentHighlighting import ChatGPTHighlighter
 from .AutoCropping import AVASD
-# from Pizzazz import Pizzazz, SubtitleCreator 
+from .Pizzazz import VideoProcessor, SubtitleCreator
 from .Utilities import Logger, Cache, Timestamp
 import sys
 
@@ -31,12 +31,12 @@ def main():
     # Cropping the video
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
-    cache.save(cache_file)
+    # cache.save(cache_file)
 
     # # Adding pizzazz to the subtitles
-    # creator = Pizzazz(videos, cache = cache)
-    # creator.add_pizzazz(SubtitleCreator(cache = cache))
-    # creator.process_videos(output_directory=out_dir)
+    creator = VideoProcessor(clips, cache = cache)
+    creator.add_pizzazz(SubtitleCreator(cache=cache))
+    creator.render(output_dir="clips")
 
     
 

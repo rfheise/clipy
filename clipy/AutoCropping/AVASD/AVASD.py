@@ -27,7 +27,7 @@ class AVASD(AutoCropper):
     
     def detect_tracks_in_scenes(self, clip):
         
-        # self.cache.clear(f"clip-{clip.id}-scenes")
+        self.cache.clear(f"clip-{clip.id}-scenes")
         Logger.debug(str(clip.get_timestamp()))
         if self.cache.get_item(f"clip-{clip.id}-scenes") is not None:
             scenes = self.cache.get_item(f"clip-{clip.id}-scenes")

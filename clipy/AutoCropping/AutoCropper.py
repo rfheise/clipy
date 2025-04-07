@@ -19,6 +19,7 @@ class AutoCropper():
 
     def crop(self):
         videos = []
+        # self.cache.clear("videos")
         if self.cache.exists("videos"):
             return self.cache.get_item("videos")
         for t in self.timestamps:
@@ -30,7 +31,11 @@ class AutoCropper():
             clip.crop()
             videos.append(clip)
             Logger.new_line()
-        self.cache.get_item("videos", videos, "dev")
+            #ONLY DO ONE VIDEO FOR DEBUGGING
+            if Logger.debug_mode:
+                break 
+
+        self.cache.set_item("videos", videos, "dev")
         return videos
     
     def create_clip_from_video_file(self, timestamp):

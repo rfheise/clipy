@@ -61,13 +61,17 @@ class Face(Frame):
 
 
         self.bbox = bbox 
+        self.center = self.get_center_from_bbox()
+
+    def get_center_from_bbox(self):
         x = int((self.bbox[2] + self.bbox[0])/2)
         y = int((self.bbox[3] + self.bbox[1])/2)
-        self.center = (x,y)
-
+        return (x,y)
+    
     @classmethod
     def init_from_frame(cls, frame):
         face = cls(frame.idx, frame.center, frame.width, frame.height)
+        return face
     
     def compare(self, other_face, iou_thres=.5):
         return Face.bb_intersection_over_union(self.bbox, other_face.bbox) > iou_thres
@@ -184,13 +188,15 @@ class FacialTrack(Track):
         return speaking_frames / len(self.frames) > thresh
     
     def get_center_from_none(self):
-        #get center of face 
+        #get center of face
         x,y = 0,0
         for frame in self.frames:
-            x += frame.center[0]
-            y += frame.center[1]
+            center = frame.get_center_from_bbox()
+            x += center[0]
+            y += center[1]
         x /= len(self.frames)
-        y /= len(self.frames)   
+        y /= len(self.frames)
+        # print(x,y)   
         return x,y
 
 
