@@ -73,18 +73,17 @@ class Clip():
     def resize_for_frame(self, frame):
 
         new_w = self.width 
-        new_h = self.height * (frame.shape[0]/frame.shape[1])
-        frame = cv2.resize((new_h, new_w))
+        new_h = int(self.width * (frame.shape[0]/frame.shape[1]))
+        frame = cv2.resize(frame, (int(new_w), int(new_h)))
         #make it work for b&w video
-        if frame.shape == 3:
+        if len(frame.shape) == 3:
             new_f = np.zeros((self.height, self.width, 3))
         else:
             new_f = np.zeros((self.height, self.width))
-        ys = int(new_h/2) - math.floor(new_f.shape[1]/2)
-        ye = ys + new_f.shape[0]
+        ys = int(new_f.shape[0]/2) - math.floor(frame.shape[0]/2)
+        ye = ys + frame.shape[0]
         new_f[ys:ye] = frame 
-        print("resize", 0,self.width, ys, ye)
-        return new_f
+        return new_f.astype(np.uint8)
 
 
 

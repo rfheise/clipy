@@ -19,7 +19,7 @@ def main():
     cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
     cache.set_save_file(cache_file)
-    cache.load(cache_file)
+    # cache.load(cache_file)
 
 
     # Highlighting the subtitles
@@ -31,7 +31,7 @@ def main():
     # Cropping the video
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
-    # cache.save(cache_file)
+    cache.save(cache_file)
 
     # # Adding pizzazz to the subtitles
     creator = VideoProcessor(clips, cache = cache)
