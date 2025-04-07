@@ -151,3 +151,8 @@ class Scene():
             self.centers = self.get_centers_from_facial_tracks()
         else:
             self.centers = self.tracks[0].get_center()
+    
+    def free_frames_from_tracks(self):
+        self.frames = None
+        for track in self:
+            track.free_frames()

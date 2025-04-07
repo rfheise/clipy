@@ -41,8 +41,11 @@ class AVASD(AutoCropper):
             Logger.debug(f"Saving Bounding Boxes For Clip")
             os.makedirs("./debug/bboxes", exist_ok=True)
             self.draw_bbox_around_scene( f"./debug/bboxes/bboxes-{clip.id}.mp4", clip.get_scenes())
+        for scene in clip.get_scenes():
+            scene.free_frames_from_tracks()
         self.cache.set_item(f"clip-{clip.id}-scenes", clip.get_scenes(), level="dev")
         self.cache.save()
+        
         
     
     def draw_bbox_around_facial_tracks(self, dirname, scenes):
