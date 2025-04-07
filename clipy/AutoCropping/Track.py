@@ -8,6 +8,7 @@ class Track():
     def __init__(self, scene):
         self.scene = scene
         self.frames = []
+        self._center = None
 
     def add(self, frame):
 
@@ -42,4 +43,14 @@ class Track():
         self.scene.free_frames()
         for face in self.frames:
             face.clear_cv2()
-        
+    
+    def get_center_of_frames(self):
+        return self.frames[0].center
+    
+    def get_center_from_none(self):
+        return self.get_center_of_frames()
+
+    def get_center(self):
+        if self._center is None:
+            self._center =  self.get_center_from_none()
+        return self._center

@@ -84,7 +84,7 @@ class Scene():
         cap = cv2.VideoCapture(self.video_file)
         Logger.debug(f"{self.start}, {self.end}, {self.frame_start}, {self.frame_end}")
         cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_start)
-        for i in range(self.frame_start, self.frame_end + 1):
+        for i in range(self.frame_start, self.frame_end):
             ret, frame = cap.read()
             if not ret:
                 Logger.log_error("indexed frame not in video")
@@ -94,17 +94,20 @@ class Scene():
             self.frames.append(frame)
         cap.release()
     
-    def get_audio(self):
-        if self.audio is None:
-            self.load_audio()
+    def get_audio(self, start=None, end=None):
+        self.load_audio(start, end)
         audio = self.audio 
         #incase I need load-free functionality
         self.free_audio()
         return audio
     
-    def load_audio(self):
+    def load_audio(self, start, end):
+        if start is None:
+            start = self.start 
+        if end is None:
+            end = self.end
         video = mp.VideoFileClip(self.video_file)
-        self.audio = video.audio.subclip(self.start, self.end)
+        self.audio = video.audio.subclip(start, end)
 
     def free_audio(self):
         self.audio = None

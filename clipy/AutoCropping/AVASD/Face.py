@@ -13,18 +13,40 @@ class Face(Frame):
         super().__init__(idx, center, width, height)
         self.bbox = None 
         self.conf = None
+        self.score = None
+    
+    def set_score(self, score):
+        self.score = score
+    
+    def get_score(self):
+        if self.score is None:
+            Logger.log_error("score not processed")
+            exit(3)
+        return self.score
     
     def crop_cv2(self):
         if self.cv2 is None:
             Logger.log_error("cv2 not loaded")
             exit(2)
-        self.cv2 = self.cv2[int(self.bbox[0]):int(self.bbox[2]),int(self.bbox[1]):int(self.bbox[3])]
+        bbox = [int(i) for i in self.bbox]
+        x1 = max(bbox[0], 0)
+        x2 = min(bbox[2], self.cv2.shape[1])
+        y1 = max(bbox[1],0)
+        y2 = min(bbox[3], self.cv2.shape[0])
+        self.cv2 = self.cv2[y1:y2, x1:x2]
         return self.cv2 
     
     def set_face_detection_args(self, bbox, conf):
 
-        self.bbox = bbox 
+        self.set_bbox(bbox)
         self.conf = conf
+
+    def set_bbox(self, bbox):
+        
+        self.bbox = bbox 
+        x = int((self.bbox[2] + self.bbox[0])/2)
+        y = int((self.bbox[3] + self.bbox[1])/2)
+        self.center = (x,y)
 
     @classmethod
     def init_from_frame(cls, frame):
@@ -65,16 +87,6 @@ class FacialTrack(Track):
     def __init__(self, scene):
         
         super().__init__(scene)
-        self.score = None 
-
-    def set_score(self, score):
-        self.score = score
-    
-    def get_score(self):
-        if self.score is None:
-            Logger.log_error("score not processed")
-            exit(3)
-        return self.score
 
     def contains_face(self, face):
 
@@ -142,7 +154,27 @@ class FacialTrack(Track):
                 new_face.set_face_detection_args(bbox, conf)
                 self.frames.insert(i, new_face)
             
-            
+    def is_speaker(self, thresh=.25):
+        #denotes whether track is speaking
+        #pretty simple heuristic definitely needs updated later
+        #just checks to see if person speaking is speaking in more than thresh% of track
+        speaking_frames = 0
+        for frame in self.frames:
+            if frame.get_score() > 0:
+                speaking_frames += 1
+        return speaking_frames / len(self.frames) > thresh
+    
+    def get_center_from_none(self):
+        #get center of face 
+        x,y = 0,0
+        for frame in self.frames:
+            x += frame.center[0]
+            y += frame.center[1]
+        x /= len(self.frames)
+        y /= len(self.frames)   
+        return x,y
+
+
     
 
 

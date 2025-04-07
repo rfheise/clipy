@@ -1,0 +1,13 @@
+
+
+Track setup needs done
+Rather than
+Track
+    scene 
+    frames 
+
+clip
+    scenes
+        tracks 
+            frames 
+        "track manager functions"

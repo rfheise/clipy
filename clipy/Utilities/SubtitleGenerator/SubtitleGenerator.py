@@ -31,13 +31,14 @@ class SubtitleGenerator():
         return self.__temp_buffer
     
     def generate_subtitles(self):        
-        Logger.log(f"Generating subtitles for {self.fname}")
+
         audio = AudioSegment.from_file(self.audio_file)
         self.duration = audio.duration_seconds
         timestamps = [[i, i+self.subtitle_interval] for i in range(0, int(self.duration), self.subtitle_interval)]
         timestamps[-1][1] = self.duration
         timestamps = TimeStamps.from_nums(timestamps) 
         #generate segments 
+        Logger.log(f"Generating subtitles for {self.fname}")
         for t in tqdm(timestamps, total=len(timestamps)):
             out = self.generate_subtitle_segment(t)
             self.add_subtitles(out)
@@ -188,7 +189,7 @@ class SubtitleGenerator():
         return self.type in [".mp4", ".avi", ".m4v",".webm",".mov"]
 
     def generate_audio_from_video(self):
-        Logger.log("Generating audio from video")
+        Logger.log("Splitting audio from video")
         if os.path.exists("/dev/shm"):
             tmp_file = "/dev/shm/.tmp_audio_file-"+str(random.randint(0,10**9))
         else:
@@ -197,7 +198,6 @@ class SubtitleGenerator():
         result = subprocess.run(['ffmpeg', '-i', self.fname, tmp_file + ".wav"],capture_output=True,text=True)
         result = subprocess.run(['lame', '-b', "128",tmp_file + ".wav",audio_file],capture_output=True,text=True)
         os.remove(tmp_file + ".wav")
-        Logger.log("Audio generated from video")
         return audio_file
 
     def cleanup(self):

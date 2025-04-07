@@ -1,4 +1,4 @@
-from ...Utilities import GhostCache, Logger, Helper
+from ...Utilities import GhostCache, Logger, Helper, Timestamp
 from ..AutoCropper import AutoCropper
 from .Face import Face, FacialTrack
 from ..Track import Track
@@ -46,10 +46,10 @@ class AVASD(AutoCropper):
             self.score_tracks(self.facial_tracks)
             self.cache.set_item("facial_tracks", self.facial_tracks)
             self.draw_bbox_around_scene(f"./.cache/scene-{random.randint(0,10000)}.mp4")
-        #speakers is list of lists of centers in case there are multiple speakers
-        
-        speakers = self.get_speakers_from_tracks(self.facial_tracks)
-        exit()
+
+            #speakers is list of lists of centers in case there are multiple speakers
+            speakers = self.get_speakers_from_tracks(self.facial_tracks)
+            exit()
         return speakers
     
     def draw_bbox_around_facial_tracks(self, dirname):
@@ -74,14 +74,15 @@ class AVASD(AutoCropper):
                 for frame in track.frames:
                     if type(frame) == Face:
                         color = (0,0,255)
-                        if track.get_score() > 0:
+                        if frame.get_score() > 0:
                             color = (0,255,0)
+                        # cv2.putText(frame.cv2, str(frame.get_score()), (int(frame.bbox[0]), int(frame.bbox[1])), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color,1)
                         frame.draw_bbox(color=color)
         
         frames = []
         for tracks in self.facial_tracks:
             frames.extend(tracks[0].scene.get_frames())
-        Helper.write_video(frames, "./.cache/scene.tmp.mp4")
+        Helper.write_video(frames, "./.cache/scene.tmp.mp4",fps=tracks[0].scene.fps)
         new_video=mp.VideoFileClip("./.cache/scene.tmp.mp4")
         video = mp.VideoFileClip(self.video_file)
         audio = video.audio.subclip(self.facial_tracks[0][0].scene.start, self.facial_tracks[-1][0].scene.end)
@@ -98,27 +99,50 @@ class AVASD(AutoCropper):
                 if type(track) is FacialTrack:
                     print("here")
                     score = self.get_score(track)
-                    track.set_score(score)
+                    for i,frame in enumerate(track.frames):
+                        s = score[max(i - 2, 0):min(i + 3, len(track.frames))]
+                        frame.set_score(s.mean())
         
-    def get_speakers_from_tracks(facial_tracks):
+    def get_speakers_from_tracks(self, facial_tracks):
 
         #map tracks in scene
+        #probably want to put this somewhere else
+        # as you could imagine various frame types and 
+        # a lot of moving parts
+        # fine for init
+        # maybe create clip object that is a list of a list of tracks
+
         centers = []
         scene_tracks = defaultdict([])
         for track in facial_tracks:
-            if track.get_score() is None:
+            if track.frames[0].get_score() is None:
                 Logger.error("Score not set")
             scene_tracks[track.scene_id].append(track)
-        for key in scene_tracks.keys():
+        keys = scene_tracks.keys()
+        keys.sort()
+        for key in keys:
             try:
                 scene_tracks[key].sort(key=lambda x:x.score)
             except AttributeError:
                 #default track encountered no need to sort
                 pass
-            #return tracks instead of center
-            centers.append(scene_tracks[key][0])
+            if type(scene_tracks[key][0]) is FacialTrack:
+                center = self.get_center_from_faces(facial_tracks)
+            else:
+                center = scene_tracks[key][0].get_center()
+            centers.append(center)
         return centers
 
+    def get_center_from_faces(facial_tracks):
+        
+        
+        num_speakers = 0
+        for track in facial_tracks:
+            if track.is_speaker():
+                num_speakers += 1
+        if len(facial_tracks) == 1 or num_speakers == 1:
+            return facial_tracks[0].get_center()
+        return facial_tracks.get_center_of_frames()
     
     def generate_facial_tracks(self, scenes):
         
@@ -198,16 +222,17 @@ class AVASD(AutoCropper):
 if __name__ == "__main__":
     from ...Utilities import Cache 
     from ...ContentHighlighting import ChatGPTHighlighter
-    video_path = "./videos/films/walk_the_line.mp4"
+    video_path = "./videos/other/walk_the_line_25_16.mp4"
     cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
     cache.load(cache_file)
     # cache.clear('highlight')
     # cache.clear('scenes')
     # cache.clear()
-    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache, sub_model="tiny.en")
-    intervals = highlighter.highlight_intervals()
-    cache.save(cache_file)
+    # highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache, sub_model="turbo")
+    # intervals = highlighter.highlight_intervals()
+    # cache.save(cache_file)
+    intervals = [Timestamp(1498,1546)]
     
     #don't cache AVASD quite yet
     cropper = AVASD(video_path, intervals, cache=cache)

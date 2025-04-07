@@ -25,7 +25,7 @@ def draw_box_on_frame(frame, center, box_size=(100, 100), color=(0, 0, 0), thick
     cv2.rectangle(frame_with_box, top_left, bottom_right, color, thickness)
     return frame_with_box
 
-def write_video(frames, output_path, fps=24):
+def write_video(frames, output_path, fps):
     """
     Writes a list of frames (numpy arrays) to a video file.
     
@@ -35,11 +35,12 @@ def write_video(frames, output_path, fps=24):
       fps (int): Frames per second for the output video.
     """
     # Get dimensions from the first frame.
+    if len(frames[0].shape) == 2:  # Grayscale image
+        frames = [cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB) for frame in frames]
     height, width = frames[0].shape[:2]
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
     video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
     
     for frame in frames:
         video_writer.write(frame)
-    
     video_writer.release()
