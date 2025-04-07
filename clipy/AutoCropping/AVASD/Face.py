@@ -115,7 +115,7 @@ class FacialTrack(Track):
         self.free_frames()
         new_video=mp.VideoFileClip(fname + ".tmp.mp4")
         new_video.audio = self.scene.get_audio()
-        new_video.write_videofile(fname, codec="libx264", audio_codec="aac")
+        new_video.write_videofile(fname, codec="libx264", audio_codec="aac",logger=None)
         os.remove(fname + ".tmp.mp4")
         self.scene.free_audio()
     

@@ -17,7 +17,6 @@ class talkNet(nn.Module):
         self.lossV = lossV().to(self.device)
         self.optim = torch.optim.Adam(self.parameters(), lr = lr)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, step_size = 1, gamma=lrDecay)
-        print(time.strftime("%m-%d %H:%M:%S") + " Model para number = %.2f"%(sum(param.numel() for param in self.model.parameters()) / 1024 / 1024))
 
     def train_network(self, loader, epoch, **kwargs):
         self.train()
@@ -81,13 +80,12 @@ class talkNet(nn.Module):
 
     def loadParameters(self, path):
         selfState = self.state_dict()
-        loadedState = torch.load(path)
+        loadedState = torch.load(path, map_location=self.device)
         for name, param in loadedState.items():
             origName = name;
             if name not in selfState:
                 name = name.replace("module.", "")
                 if name not in selfState:
-                    print("%s is not in the model."%origName)
                     continue
             if selfState[name].size() != loadedState[origName].size():
                 sys.stderr.write("Wrong parameter length: %s, model: %s, loaded: %s"%(origName, selfState[name].size(), loadedState[origName].size()))

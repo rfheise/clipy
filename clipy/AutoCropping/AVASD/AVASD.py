@@ -23,52 +23,35 @@ class AVASD(AutoCropper):
         #number of failed detections before face is rejected
         self.num_failed_det = 10
         self.min_frames_in_track = 20
-        self.facial_tracks = None
         self.avasd_model = avasd_model(Logger.device)
     
-    def detect_center_across_frames(self, clip):
+    def detect_tracks_in_scenes(self, clip):
+
         
-        self.cache.clear("facial_tracks")
-        # self.cache.clear("gen_facial_tracks")
-        if self.cache.exists("facial_tracks"):
-            self.facial_tracks = self.cache.get_item("facial_tracks")
-        else:
-            self.facial_tracks = self.generate_facial_tracks(clip)
-
-            # self.draw_bbox_around_facial_tracks('./.cache/tracks')
-            # self.draw_bbox_around_scene(f"./.cache/scene-low.mp4")
-
-            #TMP CODE WHILE DEVELOPING
-            #NEEDS TO BE REMOVED WHEN DONE
-            self.cache.save("./.cache/fd_test.sav")
-
-
-            self.score_tracks(self.facial_tracks)
-            self.cache.set_item("facial_tracks", self.facial_tracks)
-            self.draw_bbox_around_scene(f"./.cache/scene-{random.randint(0,10000)}.mp4")
-
-            #speakers is list of lists of centers in case there are multiple speakers
-            speakers = self.get_speakers_from_tracks(self.facial_tracks)
-            exit()
-        return speakers
+        self.generate_facial_tracks(clip.get_scenes())
+        self.score_tracks(clip.get_scenes())
+        if Logger.debug_mode:
+            Logger.debug(f"Saving Bounding Boxes For Clip")
+            os.makedirs("./debug/bboxes", exist_ok=True)
+            self.draw_bbox_around_scene( f"./debug/bboxes/bboxes-{clip.id}.mp4", clip.get_scenes())
     
-    def draw_bbox_around_facial_tracks(self, dirname):
+    def draw_bbox_around_facial_tracks(self, dirname, scenes):
         
         os.makedirs(dirname, exist_ok=True)
         count = 0
-        for scene in self.facial_tracks:
+        for scene in scenes:
             for track in scene:
                 count += 1
                 if type(track) is FacialTrack:
                     track.render_bbox_video(os.path.join(dirname, f"track-{count}.mp4"))
 
-    def draw_bbox_around_scene(self, fname):
+    def draw_bbox_around_scene(self, fname, scenes):
         #was really really tired so started to get sloppy around this point
         #definitely needs re-done
-        for scene in self.facial_tracks:
+        for scene in scenes:
             for track in scene:
                 track.free_frames()
-        for scene in self.facial_tracks:
+        for scene in scenes:
             for track in scene:
                 track.load_frames(mode="render")
                 for frame in track.frames:
@@ -80,76 +63,37 @@ class AVASD(AutoCropper):
                         frame.draw_bbox(color=color)
         
         frames = []
-        for tracks in self.facial_tracks:
-            frames.extend(tracks[0].scene.get_frames())
-        Helper.write_video(frames, "./.cache/scene.tmp.mp4",fps=tracks[0].scene.fps)
+        for scene in scenes:
+            frames.extend(scene.get_frames())
+        Helper.write_video(frames, "./.cache/scene.tmp.mp4",fps=scene.fps)
         new_video=mp.VideoFileClip("./.cache/scene.tmp.mp4")
         video = mp.VideoFileClip(self.video_file)
-        audio = video.audio.subclip(self.facial_tracks[0][0].scene.start, self.facial_tracks[-1][0].scene.end)
+        audio = video.audio.subclip(scenes[0].start, scenes[-1].end)
         new_video.audio = audio
-        new_video.write_videofile(fname, codec="libx264", audio_codec="aac")
+        new_video.write_videofile(fname, codec="libx264", audio_codec="aac", logger=None)
         os.remove("./.cache/scene.tmp.mp4")
         
         
 
-    def score_tracks(self, facial_tracks):
+    def score_tracks(self, scenes):
+        Logger.log("Detecting Speakers In Tracks")
 
-        for tracks in facial_tracks:
+        total = 0
+        for scene in scenes:
+            total += len(scene.tracks)
+        Logger.debug("Saving Tracks For Faces")
+        pbar = tqdm(total=total)
+        for tracks in scenes:
             for track in tracks:
                 if type(track) is FacialTrack:
-                    print("here")
                     score = self.get_score(track)
                     for i,frame in enumerate(track.frames):
                         s = score[max(i - 2, 0):min(i + 3, len(track.frames))]
                         frame.set_score(s.mean())
-        
-    def get_speakers_from_tracks(self, facial_tracks):
+                pbar.update(1)
 
-        #map tracks in scene
-        #probably want to put this somewhere else
-        # as you could imagine various frame types and 
-        # a lot of moving parts
-        # fine for init
-        # maybe create clip object that is a list of a list of tracks
-
-        centers = []
-        scene_tracks = defaultdict([])
-        for track in facial_tracks:
-            if track.frames[0].get_score() is None:
-                Logger.error("Score not set")
-            scene_tracks[track.scene_id].append(track)
-        keys = scene_tracks.keys()
-        keys.sort()
-        for key in keys:
-            try:
-                scene_tracks[key].sort(key=lambda x:x.score)
-            except AttributeError:
-                #default track encountered no need to sort
-                pass
-            if type(scene_tracks[key][0]) is FacialTrack:
-                center = self.get_center_from_faces(facial_tracks)
-            else:
-                center = scene_tracks[key][0].get_center()
-            centers.append(center)
-        return centers
-
-    def get_center_from_faces(facial_tracks):
-        
-        
-        num_speakers = 0
-        for track in facial_tracks:
-            if track.is_speaker():
-                num_speakers += 1
-        if len(facial_tracks) == 1 or num_speakers == 1:
-            return facial_tracks[0].get_center()
-        return facial_tracks.get_center_of_frames()
-    
     def generate_facial_tracks(self, scenes):
         
-        if self.cache.exists("gen_facial_tracks"):
-            return self.cache.get_item("gen_facial_tracks")
-
-        clip_tracks = []
         Logger.log("Generating Facial Tracks")
         pbar = tqdm(total=self.get_total_frames(scenes))
         for scene in scenes:
@@ -164,7 +108,7 @@ class AVASD(AutoCropper):
                     for track in facial_tracks:
                         if track.contains_face(face):
                             track.add(face)
-                            s = True
+                            setinel = True
                             break 
                     if setinel:
                         continue
@@ -182,24 +126,15 @@ class AVASD(AutoCropper):
             #after tracks are processed interp
             #the bboxes to remove gaps between frames
             for track in facial_tracks:
-                print(len(track.frames))
                 track.interp_frames()
-                print(len(track.frames))
             
             if len(facial_tracks) == 0:
 
                 facial_tracks = [Track.init_from_raw_frames(scene, frames)]
 
-            clip_tracks.append(facial_tracks)
+            scene.set_tracks(facial_tracks)
             scene.free_frames()
-        clip_tracks.sort(key = lambda x:x[0].frames[0].idx)
-        self.cache.set_item("gen_facial_tracks",clip_tracks,"dev")
-        return clip_tracks
-
-    def crop_frames_around_center(clip, centers):
-        #TODO
-        # crop clip using the speficied center for each frame
-        pass
+        return scenes
 
     def detect_faces(self, frame, frame_idx):
         
@@ -229,11 +164,13 @@ if __name__ == "__main__":
     # cache.clear('highlight')
     # cache.clear('scenes')
     # cache.clear()
-    # highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache, sub_model="turbo")
-    # intervals = highlighter.highlight_intervals()
-    # cache.save(cache_file)
-    intervals = [Timestamp(1498,1546)]
+    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
+    intervals = highlighter.highlight_intervals()
+    cache.save(cache_file)
+    intervals.insert(0,Timestamp(1498,1546))
+    # intervals = [Timestamp(1498,1546)]
     
     #don't cache AVASD quite yet
     cropper = AVASD(video_path, intervals, cache=cache)
     cropper.crop()
+    cache.save(cache_file)

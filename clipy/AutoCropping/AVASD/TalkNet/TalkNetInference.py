@@ -11,6 +11,8 @@ import moviepy.editor as mp
 import random
 import subprocess
 
+
+
 class TalkNetInference():
     PATH_WEIGHT = os.path.join(os.path.dirname(__file__), "talknet.model")
     def __init__(self, device):
@@ -25,18 +27,19 @@ class TalkNetInference():
 
         video = self.load_frames_for_avasd(track)
         audio = self.load_audio_for_avasd(track)
-        self.write_out(video, track.scene.get_audio(), track.scene.fps, track)
-        score = self.eval_model(video, audio, track.scene.fps)
-        print(track.rand, score)
+        if Logger.debug_mode:
+            self.write_out(video, track.scene.get_audio(), track.scene.fps, track)
+            score = self.eval_model(video, audio, track.scene.fps)
         return score
     
     def write_out(self, video, audio,fps, track):
-        os.makedirs(f"./.cache/talknet-inputs/{track.scene.idx}", exist_ok=True)
-        out_video = f"./.cache/talknet-inputs/{track.scene.idx}/video.mp4"
-        Helper.write_video(video, "./.cache/scene-track.tmp.mp4",fps=fps)
-        new_video=mp.VideoFileClip("./.cache/scene-track.tmp.mp4")
+        os.makedirs(f"./debug/talknet-inputs/{track.scene.idx}", exist_ok=True)
+        out_video = f"./debug/talknet-inputs/{track.scene.idx}/video.mp4"
+        Helper.write_video(video, "./debug/scene-track.tmp.mp4",fps=fps)
+        new_video=mp.VideoFileClip("./debug/scene-track.tmp.mp4")
         new_video.audio = audio
-        new_video.write_videofile(out_video, codec="libx264", audio_codec="aac")
+        new_video.write_videofile(out_video, codec="libx264", audio_codec="aac",logger=None)
+        os.remove("./debug/scene-track.tmp.mp4")
 
     def eval_model(self, video, audio, fps):
         self.model.eval()
@@ -47,21 +50,11 @@ class TalkNetInference():
         av_scale = audio_scale/fps
         #total duration of clip
         length = video.shape[0]
-        print(length)
-        # video = video[:length]
         audio = audio[:int(length * av_scale)]
-        # audio = audio[:int(length * (1/self.winstep)),:]
-        # video = video[:int(length * fps),:,:]
-        print(video.shape)
-        print(audio.shape)
-        print(fps)
-        
-        print(av_scale * length)
-        print(av_scale)
+
         for duration in durationSet:
             duration = duration * fps 
             batchSize = int(math.ceil(length/duration))
-            print(length, duration, math.ceil(length/duration))
 
             scores = []
             with torch.no_grad():
@@ -75,11 +68,9 @@ class TalkNetInference():
                     else:
                         start = end
                     end = start + audio_dur
-                    print(start, end)
                     
                     inputA = torch.FloatTensor(audio[start:end,:]).unsqueeze(0).to(self.device)
                     padding_v_dims = 0
-                    print(inputV.shape, inputA.shape)
 
                     # padding_v_dims = max(0, int(math.ceil(inputA.shape[1]/4) - inputV.shape[1]))
                     # padding = torch.zeros((1,padding_v_dims, inputV.shape[2], inputV.shape[3])).to(self.device)

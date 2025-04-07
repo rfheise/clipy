@@ -183,7 +183,7 @@ class SubtitleGenerator():
 
         with open(srt_path, "w") as srt_file:
             srt_file.writelines(lines)
-        print(f"SRT file saved as {srt_path}")
+
 
     def is_video(self):
         return self.type in [".mp4", ".avi", ".m4v",".webm",".mov"]

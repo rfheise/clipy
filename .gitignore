@@ -16,3 +16,4 @@ mp3
 .cache/
 *.pth
 .cache
+debug/

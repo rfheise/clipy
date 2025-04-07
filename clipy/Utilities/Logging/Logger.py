@@ -1,10 +1,14 @@
 import sys
 import torch 
+import os
 
 class Log():
 
     def __init__(self):
         pass 
+    
+    def new_line(self):
+        pass
 
     def log_error(self, message):
         pass 
@@ -34,6 +38,9 @@ class PrintLog(Log):
 
     def debug(self, message):
         print(f"Debug: {message}")
+    
+    def new_line(self):
+        return print()
 
 class Logger():
     logs = [PrintLog()]
@@ -42,6 +49,10 @@ class Logger():
     # debug_mode = False
     def __init__(self):
         pass 
+
+    def new_line():
+        for log in Logger.logs:
+            log.new_line()
 
     def log_error(message):
         for log in Logger.logs:
@@ -62,3 +73,7 @@ class Logger():
             log.debug(message)
 
 Logger.log(f"Using device {Logger.device}")
+
+if Logger.debug_mode:
+    Logger.log_warning("Debug mode is enabled")
+    os.makedirs("debug", exist_ok=True)

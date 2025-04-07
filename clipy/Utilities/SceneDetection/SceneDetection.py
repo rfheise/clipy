@@ -16,114 +16,13 @@ def detect_scenes(fname, threshold=10, cache=GhostCache):
         scenes = cache.get_item("scenes")
         return scenes
     Logger.log("Detecting Scenes")
-    scene_list = detect(fname, ContentDetector(threshold=threshold,min_scene_len=10,
+    scenes = detect(fname, ContentDetector(threshold=threshold,min_scene_len=10,
                                             #    frame_window=3,
                                                 # min_content_val=10
                                                 ),show_progress=True)
     # scene_list = scene_manager.detect_scenes(video, show_progress=True)
-    scenes = [Scene.init_from_pyscene(fname, scene) for scene in scene_list]
-    scenes.sort(key=lambda x:x.start)
+    scenes.sort(key=lambda x:x[0].get_seconds())
     cache.set_item('scenes', scenes, "basic")
     return scenes
 
 
-class Scene():
-
-    counter = 0
-    def __init__(self, video_file, start,end, frame_start, frame_end):
-        self.start = start 
-        self.end = end 
-        self.frame_start = frame_start 
-        self.frame_end = frame_end
-        self.video_file = video_file
-        self.cap = None
-        self.frames = None
-        self.audio = None
-        self.idx = Scene.counter 
-        Scene.counter += 1
-        self._fps = None
-
-    @property
-    def fps(self):
-        if self._fps is None:
-            # Open the video file.
-            cap = cv2.VideoCapture(self.video_file)
-
-            # Get frames per second (FPS) of the video.
-            self._fps = cap.get(cv2.CAP_PROP_FPS)
-            cap.release()
-        return self._fps
-
-    @classmethod
-    def init_from_pyscene(cls, fname, scene):
-        return cls(fname, scene[0].get_seconds(), scene[1].get_seconds(),
-                   scene[0].get_frames(), scene[1].get_frames())
-
-    def get_timestamp(self):
-        return Timestamp(self.start, self.end)
-    
-    def trim_scene(self, timestamp):
-        
-        if timestamp.start > self.start:
-            self.start  = timestamp.start 
-            self.frame_start = Scene.get_frame_at_timestamp(self.video_file, timestamp.start)
-        if timestamp.end < self.end:
-            self.end = timestamp.end 
-            self.frame_end = Scene.get_frame_at_timestamp(self.video_file, timestamp.end)
-    
-    def get_frames(self, mode="model"):
-        if self.frames is None:
-            self.load_frames(mode)
-        return self.frames 
-
-    def free_frames(self):
-        self.frames = None    
-
-    def load_frames(self, mode = "model"):
-        self.frames = []
-        cap = cv2.VideoCapture(self.video_file)
-        Logger.debug(f"{self.start}, {self.end}, {self.frame_start}, {self.frame_end}")
-        cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_start)
-        for i in range(self.frame_start, self.frame_end):
-            ret, frame = cap.read()
-            if not ret:
-                Logger.log_error("indexed frame not in video")
-                exit(4)
-            if mode == "model":
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            self.frames.append(frame)
-        cap.release()
-    
-    def get_audio(self, start=None, end=None):
-        self.load_audio(start, end)
-        audio = self.audio 
-        #incase I need load-free functionality
-        self.free_audio()
-        return audio
-    
-    def load_audio(self, start, end):
-        if start is None:
-            start = self.start 
-        if end is None:
-            end = self.end
-        video = mp.VideoFileClip(self.video_file)
-        self.audio = video.audio.subclip(start, end)
-
-    def free_audio(self):
-        self.audio = None
-
-    @staticmethod
-    def get_frame_at_timestamp(video_path, timestamp_sec):
-        #vibe coded with chatgpt
-
-
-        # Open the video file.
-        cap = cv2.VideoCapture(video_path)
-
-        # Get frames per second (FPS) of the video.
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        # Calculate the frame number.
-        frame_number = round(timestamp_sec * fps)
-
-
-        return frame_number

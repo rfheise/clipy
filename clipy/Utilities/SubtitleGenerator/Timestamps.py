@@ -14,6 +14,10 @@ class TimeStamps():
         for t in integer_timestamps:
             ts.add_timestamp(Timestamp(t[0], t[1]))
         return ts
+    
+    def insert(self, index, timestamp):
+        self.timestamps.insert(index, timestamp)
+
     @classmethod
     def from_times(cls,start,end):
         return cls([Timestamp(start, end)])

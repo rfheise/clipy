@@ -46,7 +46,7 @@ class Cache():
             self.cache = None
 
     def load(self, fname):
-
+        Logger.debug("Loading Cache")
         #should work for now but need to improve later 
         if not os.path.exists(fname):
             Logger.log_warning("Cache File Does Not Exist Skipping Initialization")
@@ -59,7 +59,7 @@ class Cache():
             Logger.log_warning("Cache set to None after load")
         
     def save(self, fname):
-
+        Logger.debug("Saving Cache")
         with open(fname, 'wb') as f:
             pickle.dump(self.cache, f)
     
