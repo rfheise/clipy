@@ -1,7 +1,5 @@
 # Clipy: Shortform Hyper Intelligent Trimming
 
-Clipy is a powerful tool that automatically produces shortform content from long form content and uploads it to your favorite video sharing platform.
-
 # Outline
 I intent to create a modular pipeline that lets me plug and play with various algorithms for the various components. Below I will outline the pipeline and the initial implementation. 
 
