@@ -1,4 +1,0 @@
-
-
-# THIS FOLDER WAS TAKEN DIRECTLY FROM TALKNET GITHUB
-https://github.com/TaoRuijie/TalkNet-ASD 
