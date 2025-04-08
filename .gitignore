@@ -17,6 +17,7 @@ mp3
 *.pth
 .cache
 debug/
+debug
 clips/
 fonts/
 *.model
