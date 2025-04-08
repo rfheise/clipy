@@ -1,0 +1,17 @@
+
+
+Track setup needs done
+Rather than
+Track
+    scene 
+    frames 
+
+Do this instead
+clip
+    scenes
+        tracks 
+            frames 
+        "track manager functions"
+    
+After redoing the scene management make sure everything 
+flows top down instead of up and around. 
