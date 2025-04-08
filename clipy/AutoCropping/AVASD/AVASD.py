@@ -1,4 +1,4 @@
-from ...Utilities import GhostCache, Logger, Helper, Timestamp
+from ...Utilities import GhostCache, Logger, Helper, Timestamp, Profiler
 from ..AutoCropper import AutoCropper
 from .Face import Face, FacialTrack
 from ..Track import Track
@@ -27,16 +27,19 @@ class AVASD(AutoCropper):
     
     def detect_tracks_in_scenes(self, clip):
         
-        self.cache.clear(f"clip-{clip.id}-scenes")
+        # self.cache.clear(f"clip-{clip.id}-scenes")
         Logger.debug(str(clip.get_timestamp()))
         if self.cache.get_item(f"clip-{clip.id}-scenes") is not None:
             scenes = self.cache.get_item(f"clip-{clip.id}-scenes")
             clip.set_scenes(scenes)
             Logger.debug(f"Loading Clip {clip.id} from cache")
             return
-        
+        Profiler.start("facial detection")
         self.generate_facial_tracks(clip.get_scenes())
+        Profiler.stop("facial detection")
+        Profiler.start("speaker detection")
         self.score_tracks(clip.get_scenes(), clip.id)
+        Profiler.stop("speaker detection")
         if Logger.debug_mode:
             Logger.debug(f"Saving Bounding Boxes For Clip")
             os.makedirs("./debug/bboxes", exist_ok=True)
@@ -44,7 +47,6 @@ class AVASD(AutoCropper):
         for scene in clip.get_scenes():
             scene.free_frames_from_tracks()
         self.cache.set_item(f"clip-{clip.id}-scenes", clip.get_scenes(), level="dev")
-        self.cache.save()
         
         
     

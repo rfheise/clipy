@@ -1,5 +1,5 @@
 import os 
-from ..Utilities import Logger, Helper, GhostCache
+from ..Utilities import Logger, Helper, GhostCache, Profiler
 import moviepy.editor as mp
 
 class VideoProcessor:
@@ -21,6 +21,7 @@ class VideoProcessor:
 
     def render(self, output_dir="clips"):
         os.makedirs(output_dir, exist_ok=True)
+        Profiler.start("render")
         for video in self.videos:
             outfile = f"clip-{video.id}.mp4"
             Logger.new_line()
@@ -31,3 +32,4 @@ class VideoProcessor:
             self.save_to_file(os.path.join(output_dir, f"clip-{video.id}.mp4"),
                               frames, audio, video.get_scenes()[0].fps)
             print(f"Processed video saved at: {outfile}")
+        Profiler.stop("render")

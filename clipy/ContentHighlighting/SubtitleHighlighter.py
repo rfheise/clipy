@@ -1,6 +1,6 @@
 from .ContentHighlighting import ContentHighlighting
 from ..Utilities.SubtitleGenerator import OpenAIWhisper
-from ..Utilities import GhostCache, Logger
+from ..Utilities import GhostCache, Logger, Profiler
 
 
 class SubtitleHighlighter(ContentHighlighting):
@@ -13,20 +13,22 @@ class SubtitleHighlighter(ContentHighlighting):
         self.cache = cache
 
     def highlight_intervals(self):
-
+        
         if self.cache.exists("highlight"):
             return self.cache.get_item("highlight")
-
+        Profiler.start("subtitle highlighting")
+        Profiler.start("subtitle generation")
         if self.cache.exists("subtitles"):
             self.sub_gen =  self.cache.get_item("subtitles")
         else:
             self.sub_gen.generate_subtitles()
             self.cache.set_item("subtitles", self.sub_gen, "basic")
-
+        Profiler.stop("subtitle generation")
         timestamps = self.highlight_subtitles()
         timestamps = self.adjust_timestamps_to_scenes(timestamps)
         # Logger.debug(timestamps)
         self.cache.set_item("highlight", timestamps, "dev")
+        Profiler.stop("subtitle hightlighting")
         return timestamps
 
     def highlight_subtitles(self, subtitles):

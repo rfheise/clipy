@@ -1,6 +1,7 @@
 import pickle 
 import os 
 from ..Logging.Logger import Logger
+from ..Profiler.Profiler import Profiler
 
 class Cache():
 
@@ -47,6 +48,7 @@ class Cache():
             self.cache = None
 
     def load(self, fname=None):
+        Profiler.start("caching")
         if self.save_file is not None:
             fname = self.save_file
         Logger.debug("Loading Cache")
@@ -60,8 +62,10 @@ class Cache():
         
         if self.cache is None:
             Logger.log_warning("Cache set to None after load")
+        Profiler.stop("caching")
         
     def save(self, fname=None):
+        Profiler.start("caching")
         if self.save_file is not None:
             fname = self.save_file
         if fname is None:
@@ -70,6 +74,7 @@ class Cache():
         Logger.debug("Saving Cache")
         with open(fname, 'wb') as f:
             pickle.dump(self.cache, f)
+        Profiler.stop("caching")
     
     def clear(self, key = None):
         

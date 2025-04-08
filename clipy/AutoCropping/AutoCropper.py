@@ -1,4 +1,4 @@
-from ..Utilities import Timestamp, TimeStamps, Logger, GhostCache, detect_scenes
+from ..Utilities import Timestamp, TimeStamps, Logger, GhostCache, detect_scenes, Profiler
 from .Clip import Clip
 from .Scene import Scene
 
@@ -19,9 +19,9 @@ class AutoCropper():
 
     def crop(self):
         videos = []
-        self.cache.clear("videos")
         if self.cache.exists("videos"):
             return self.cache.get_item("videos")
+        Profiler.start("crop")
         for t in self.timestamps:
             clip = Clip.init_from_timestamp(self.video_file, t, cache=self.cache)
             Logger.new_line()
@@ -31,7 +31,7 @@ class AutoCropper():
             clip.crop()
             videos.append(clip)
             Logger.new_line()
-
+        Profiler.stop("crop")
         self.cache.set_item("videos", videos, "dev")
         return videos
     

@@ -2,7 +2,7 @@ from .SubtitleHighlighter import SubtitleHighlighter
 from openai import OpenAI
 import json
 from ..Utilities import Logger, GhostCache, Cache
-from ..Utilities import Timestamp, TimeStamps, OpenAIWhisper
+from ..Utilities import Timestamp, TimeStamps, OpenAIWhisper, Profiler
 from scenedetect import detect, ContentDetector
 
 class ChatGPTHighlighter(SubtitleHighlighter):
@@ -84,7 +84,7 @@ class ChatGPTHighlighter(SubtitleHighlighter):
 
 
     def call_api(self):
-
+        Profiler.start("gpt")
         if self.cache.exists("chatgpt"):
             return self.cache.get_item("chatgpt")
         
@@ -99,7 +99,7 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         Logger.debug(response.output)
 
         self.cache.set_item("chatgpt", response.output_text, "dev")
-
+        Profiler.stop("gpt")
         return response.output_text
 
     def get_model_input(self):
