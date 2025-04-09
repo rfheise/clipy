@@ -5,6 +5,7 @@ import torch.nn.init as init
 from .box_utils import Detect, PriorBox
 
 
+
 class L2Norm(nn.Module):
 
     def __init__(self, n_channels, scale):

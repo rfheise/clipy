@@ -10,3 +10,4 @@ opencv-python
 torchvision
 scipy
 python-speech-features
+pandas

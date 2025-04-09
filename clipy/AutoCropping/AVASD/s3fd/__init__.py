@@ -5,6 +5,7 @@ import torch
 from torchvision import transforms
 from .nets import S3FDNet
 from .box_utils import nms_
+from ....Utilities import Helper, Logger
 
 PATH_WEIGHT = os.path.join(os.path.dirname(__file__), "sfd_face.pth")
 # if os.path.isfile(PATH_WEIGHT) == False:
@@ -24,6 +25,9 @@ class S3FD():
         # print('[S3FD] loading with', self.device)
         self.net = S3FDNet(device=self.device).to(self.device)
         PATH = os.path.join(os.getcwd(), PATH_WEIGHT)
+        if not os.path.exists(PATH_WEIGHT):
+            Logger.log("Downloading S3FD Model Weights")
+            Helper.download_cf("sfd_face.pth", PATH_WEIGHT)
         state_dict = torch.load(PATH, map_location=self.device)
         self.net.load_state_dict(state_dict)
         self.net.eval()

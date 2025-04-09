@@ -20,7 +20,7 @@ def main():
     cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
     cache.set_save_file(cache_file)
-    # cache.load(cache_file)
+    cache.load(cache_file)
 
 
     # Highlighting the subtitles

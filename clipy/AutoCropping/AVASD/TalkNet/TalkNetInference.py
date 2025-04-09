@@ -17,8 +17,10 @@ class TalkNetInference():
     PATH_WEIGHT = os.path.join(os.path.dirname(__file__), "talknet.model")
     def __init__(self, device):
         self.model = talkNet(device)
-        if Logger.device == "cuda":
-            self.model.loadParameters(TalkNetInference.PATH_WEIGHT)
+        if not os.path.exists(TalkNetInference.PATH_WEIGHT):
+            Logger.log("Downloading TalkNet Model Weights")
+            Helper.download_cf("talknet.model", TalkNetInference.PATH_WEIGHT)
+        self.model.loadParameters(TalkNetInference.PATH_WEIGHT)
         self.winstep = 0.010
         self.device = device
 
