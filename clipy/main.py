@@ -16,15 +16,15 @@ def main():
     Profiler.init()
     Profiler.start()
 
-    video_path = "./videos/other/walk_the_line_25_16.mp4"
-    cache = Cache(basic=True)
+    video_path = "./videos/other/lex.mp4"
+    cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
     cache.set_save_file(cache_file)
     # cache.load(cache_file)
 
 
     # Highlighting the subtitles
-    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
+    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o-mini", cache=cache, sub_model="turbo")
     intervals = highlighter.highlight_intervals()
     # intervals.insert(0,Timestamp(1498,1546))
     cache.save(cache_file)

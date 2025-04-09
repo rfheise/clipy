@@ -29,9 +29,8 @@ class SubtitleCreator(Pizzazz):
         for i, frame in enumerate(frames):
             frame_idx = i + frame_start 
             for subtitle in subtitles:
-                if subtitle.timestamp.get_start_frame(fps) < frame_idx\
-                    and subtitle.timestamp.get_end_frame(fps) > frame_idx:
-
+                if (subtitle.timestamp.get_start_frame(fps) <= frame_idx\
+                    and subtitle.timestamp.get_end_frame(fps) > frame_idx):
                     frames[i] = self.write(frame, subtitle.text)
         return frames, audio
 

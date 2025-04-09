@@ -13,7 +13,9 @@ class Profile():
         self.start_time = time.time()
     
     def stop(self):
-        self.elapsed_time = time.time() - self.start_time
+        if self.elapsed_time is None:
+            self.elapsed_time = 0
+        self.elapsed_time += time.time() - self.start_time
         self.start_time = None 
     
     def summary(self):

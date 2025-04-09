@@ -53,6 +53,7 @@ I intent to create a modular pipeline that lets me plug and play with various al
     * Font Size
     * Resolution
     * Shot Cutting Parameters
+    * tweak gpt system prompts
 - [ ] Create As Module
     * make sure it's usable out of the box
     * find a way to easily distribute model weights
