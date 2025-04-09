@@ -30,6 +30,7 @@ I intent to create a modular pipeline that lets me plug and play with various al
     * Video Highlighting Detector: Initially implemented as TalkNet that identifies the speaker it will yield the cordinates of the detected face
     * Video cropping: crops videos around cordinates probably using opencv or something
 ## TalkNet - Audio Visual Active Speaker Detection
+
 [![Watch the Demo Video](https://api.habits.heise.ai/media/other/video1.jpg)](https://www.youtube.com/watch?v=r59jHQHsje8)
 
 
@@ -76,4 +77,8 @@ I intent to create a modular pipeline that lets me plug and play with various al
     * find a way to easily distribute model weights
     * Replace lame with ffmpeg call
     * Docker Container?
+
+# Acknowledgements  
+The TalkNet & S3FD model weights and some preprocessing steps are modifed from this [repository](https://github.com/TaoRuijie/TalkNet-ASD)
+
 
