@@ -1,5 +1,23 @@
 # Clipy: Shortform Hyper Intelligent Trimming
 
+# Requirements 
+```
+ffmpeg 
+lame
+requirements in requirements.txt
+```
+# Running The Editor
+```
+cd <clipy directory>
+pip install -r requirements.txt
+python -m clipy.main <in file> <output directory>
+```
+Currently the input video needs to be 25fps with a 16000hz audio sample rate. Making this run with various input video types is in the todo list. 
+
+The editor will download the model weights while it is running. The weights are hosted on cloudflare and are around 100MB.
+
+Ideally you have a decent gpu to run the editor. With my 4090 it currently takes ~15 minutes to generate 10 clips from a 2 hour video. When I tested it using my m4 mac mini it took ~2 hours to similar results. I'm working on optimizing the gpu speeds but I honestly don't think cpu rendering speeds will improve much. 
+
 # Outline
 I intent to create a modular pipeline that lets me plug and play with various algorithms for the various components. Below I will outline the pipeline and the initial implementation. 
 
@@ -49,10 +67,13 @@ I intent to create a modular pipeline that lets me plug and play with various al
 - [ ] Tweak Video Outputs
     * Custom Fonts
     * Font Size
+    * Text Position
     * Resolution
     * Shot Cutting Parameters
     * tweak gpt system prompts
 - [ ] Create As Module
     * make sure it's usable out of the box
     * find a way to easily distribute model weights
+    * Replace lame with ffmpeg call
+    * Docker Container?
 
