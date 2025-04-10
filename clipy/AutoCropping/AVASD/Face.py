@@ -110,7 +110,8 @@ class FacialTrack(Track):
         super().__init__(scene)
 
     def contains_face(self, face):
-
+        # if not self.frames[-1].compare(face):
+        #     print(self.frames[-1].bbox, face.bbox)
         return self.frames[-1].compare(face)
 
     def add(self, face):

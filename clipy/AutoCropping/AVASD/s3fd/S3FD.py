@@ -5,7 +5,7 @@ import torch
 from torchvision import transforms
 from .nets import S3FDNet
 from .box_utils import nms_
-from ....Utilities import Helper, Logger
+from ....Utilities import Helper, Logger, Profiler
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm 
 
@@ -25,6 +25,10 @@ class S3FDImageSet(Dataset):
         self.current_scene = 0
         self.counter = 0
         self.frames = []
+        self.w = None 
+        self.h = None
+        self.load_frames_from_disk()
+        
     
     def __len__(self):
         l = 0
@@ -33,20 +37,15 @@ class S3FDImageSet(Dataset):
         return l
     
     def load_frames_from_disk(self):
-        self.frames.extend(self.scenes[self.current_scene].get_frames())
-        self.current_scene += 1
+        for scene in self.scenes:
+            for frame in scene.get_frames():
+                if self.w is None or self.h is None:
+                    self.w = frame.shape[1]
+                    self.h = frame.shape[0]
+                self.frames.append(frame)
 
     def __getitem__(self, idx):
-        #assume all frames are loaded in order
-        # double check with counter
-        if idx != self.counter:
-            Logger.log_warning("indexes do not match")
-        self.counter += 1
-        if len(self.frames) == 0:
-            self.load_frames_from_disk()
-        ret = self.frames[0]
-        del self.frames[0]
-        return self.scale_image(ret)
+        return self.scale_image(self.frames[idx])
     
     def scale_image(self, frame):
         scaled_img = cv2.resize(frame, dsize=(0, 0), fx=1, fy=1, interpolation=cv2.INTER_LINEAR)
@@ -66,8 +65,6 @@ class S3FD():
 
         tstamp = time.time()
         self.device = device
-        self.w = None 
-        self.h = None
 
         # print('[S3FD] loading with', self.device)
         self.net = S3FDNet(device=self.device).to(self.device)
@@ -86,17 +83,16 @@ class S3FD():
         self.conf_th = conf_th
 
         dataset = S3FDImageSet(scenes)
-        loader = DataLoader(dataset, batch_size=32, shuffle=False)
+        self.w = dataset.w 
+        self.h = dataset.h
+        loader = DataLoader(dataset, batch_size=32,num_workers=4, shuffle=False)
         bboxes = []
-        for x in tqdm(loader, total=len(loader)):
-                if self.w is None or self.h is None:
-                    # all frames from input video shoiuld be the same size
-                    self.w = x[0].shape[1]
-                    self.h = x[0].shape[0]
-                with torch.no_grad():
-                    x = x.to(self.device)
-                    y = self.net(x)
-                    bboxes.extend(self.get_bboxes_from_detections(y.data))
+        with torch.no_grad():
+            for x in tqdm(loader, total=len(loader)):
+                
+                x = x.to(self.device)
+                y = self.net(x)
+                bboxes.extend(self.get_bboxes_from_detections(y.data))
 
         return bboxes
     
@@ -104,7 +100,6 @@ class S3FD():
         ret = []
         for k in range(outputs.shape[0]):
             scale = torch.Tensor([self.w, self.h, self.w, self.h])
-            bboxes = np.empty(shape=(0, 5))
             detections = outputs[k].unsqueeze(0)
             bboxes = np.empty(shape=(0, 5))
             for i in range(detections.size(1)):
