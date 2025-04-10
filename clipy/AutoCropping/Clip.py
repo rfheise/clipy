@@ -96,8 +96,10 @@ class Clip():
         clip_scenes = []
         for scene in scenes:
             scene = Scene.init_from_pyscene(video_file, scene)
+            # double check this if statement
+            # seems kind of sus ngl
             if (scene.start >= timestamp.start and scene.start < timestamp.end) or \
-                (scene.end <= timestamp.end and scene.start > timestamp.start) or \
+                (scene.end <= timestamp.end and scene.start >= timestamp.start) or \
                 (scene.start < timestamp.start and scene.end > timestamp.end):
                 clip_scenes.append(scene)
 
@@ -133,7 +135,7 @@ class Clip():
         self.options["aspect_ratio"] = aspect_ratio
         for scene in self.scenes:
             scene.set_centers()
-    
+
     def set_scenes(self, scenes):
         self.scenes = scenes
 
@@ -144,3 +146,12 @@ class Clip():
 
         for scene in self.scenes:
             scene.free_frames_from_tracks()
+    
+    def get_total_frames(self):
+        #should be implemented in clip object
+
+        total_frames = 0
+        for scene in self.scenes:
+            # end frame is not inclusive
+            total_frames += scene.frame_end - scene.frame_start
+        return total_frames

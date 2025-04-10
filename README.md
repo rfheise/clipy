@@ -48,23 +48,23 @@ I intent to create a modular pipeline that lets me plug and play with various al
 
 # TODO
 
-- [ ] Finish Prototype implementation
+- [X] Finish Prototype implementation
 - [ ] Optimize Code
-    * Use torch data loaders for batched inference - S3FD and Talknet
-    * see if I can tweak model to work with variable framerate & audio sampling without re-rendering
-    * Try different subtitle presets for optimal performance
-    * try different parameters for scene-detection library
+    - [ ] Use torch data loaders for batched inference - S3FD and Talknet
+    - [ ] see if I can tweak model to work with variable framerate & audio sampling without re-rendering
+    - [ ] Try different subtitle presets for optimal performance
+    - [ ] try different parameters for scene-detection library
 - [ ] Clean/Comment Code
 - [ ] Remove Cosmetic Inefficiencies In Code 
-    * Make data flow top -> down rather than all over the place
-    * Review the code to make sure everything makes sense
+    - [ ] Make data flow top -> down rather than all over the place
+    - [ ] Review the code to make sure everything makes sense
 - [ ] Bug Fixes
-    * Weird Splits in outputs
-        * Should be an easy fix with a min scene duration
-        * Merge scenes until they hit min duration
-    * Weird Subtitle Outputs
-        * strange outputs from openai whisper 
-        * not sure how to fix but could slap some band-aids on it and pray they fix it
+    - [ ] Weird Splits in outputs
+        - [ ] Should be an easy fix with a min scene duration
+        - [ ] Merge scenes until they hit min duration
+    - [ ] Weird Subtitle Outputs
+        - [ ] strange outputs from openai whisper 
+        - [ ]not sure how to fix but could slap some band-aids on it and pray they fix it
 - [ ] Tweak Video Outputs
     * Custom Fonts
     * Font Size

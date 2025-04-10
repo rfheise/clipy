@@ -35,7 +35,7 @@ class AVASD(AutoCropper):
             Logger.debug(f"Loading Clip {clip.id} from cache")
             return
         Profiler.start("facial detection")
-        self.generate_facial_tracks(clip.get_scenes())
+        self.generate_facial_tracks(clip)
         Profiler.stop("facial detection")
         Profiler.start("speaker detection")
         self.score_tracks(clip.get_scenes(), clip.id)
@@ -107,16 +107,22 @@ class AVASD(AutoCropper):
                         frame.set_score(s.mean())
                 pbar.update(1)
 
-    def generate_facial_tracks(self, scenes):
+    def generate_facial_tracks(self, clip):
         
         Logger.log("Generating Facial Tracks")
-        pbar = tqdm(total=self.get_total_frames(scenes))
+        pbar = tqdm(total=clip.get_total_frames())
+        scenes = clip.get_scenes()
+        scene_faces = self.detect_faces(scenes)
+            
         for scene in scenes:
             frames =  scene.get_frames()
             facial_tracks = []
-            for i, frame in enumerate(frames):
+            count = 0
+            for i in range(scene.frame_duration):
                 frame_idx = i + scene.frame_start
-                faces = self.detect_faces(frame, frame_idx)
+                # faces = self.detect_faces(frame, frame_idx)
+                faces = scene_faces[count]
+                count += 1
                 for face in faces:
                     setinel = False
                     # if facial track exists add it
@@ -151,18 +157,27 @@ class AVASD(AutoCropper):
             scene.free_frames()
         return scenes
 
-    def detect_faces(self, frame, frame_idx):
+    def detect_faces(self, scenes):
         
-        bboxes = self.fdm.detect_faces(frame)
+        if self.cache.exists("bboxes"):
+            return self.cache.get_item("bboxes")
+        bboxes = self.fdm.detect_faces(scenes)
+        self.cache.set_item("bboxes",bboxes, level="dev")
+        self.cache.save()
+        scene_faces = []
         faces = []
-        for bbox in bboxes:
-            #possibly cache cv2 frame in face 
-            #I guess depends on speed savings as you wouldn't hit disk
-            face = Face.init_from_cv2_frame(frame, frame_idx)
-            face.set_face_detection_args(bbox[:-1], bbox[-1])
-            faces.append(face)
+        start_frame = scenes[0].frame_start
+        count = 0
+        for frame in bboxes:
+            for bbox in frame:
+                #possibly cache cv2 frame in face 
+                #I guess depends on speed savings as you wouldn't hit disk
+                face = Face.init_from_cv2_frame(frame, start_frame + count)
+                face.set_face_detection_args(bbox[:-1], bbox[-1])
+                faces.append(face)
+            count += 1
 
-        return faces
+        return scene_faces
     
 
     def get_score(self, track, clip_id):
@@ -172,7 +187,7 @@ class AVASD(AutoCropper):
 if __name__ == "__main__":
     from ...Utilities import Cache 
     from ...ContentHighlighting import ChatGPTHighlighter
-    video_path = "./videos/other/walk_the_line_25_16.mp4"
+    video_path = "./videos/walk_the_line_25_16.mp4"
     cache = Cache(dev=True)
     cache_file = "./.cache/fd_test.sav"
     cache.set_save_file(cache_file)
@@ -180,11 +195,11 @@ if __name__ == "__main__":
     # cache.clear('highlight')
     # cache.clear('scenes')
     # cache.clear()
-    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
-    intervals = highlighter.highlight_intervals()
+    # highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
+    # intervals = highlighter.highlight_intervals()
     # intervals.insert(0,Timestamp(1498,1546))
     # cache.save(cache_file)
-    # intervals = [Timestamp(1498,1546)]
+    intervals = [Timestamp(1498,1546)]
     #don't cache AVASD quite yet
     cropper = AVASD(video_path, intervals, cache=cache)
     cropper.crop()

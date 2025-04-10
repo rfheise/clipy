@@ -14,7 +14,9 @@ import subprocess
 
 
 class TalkNetInference():
+
     PATH_WEIGHT = os.path.join(os.path.dirname(__file__), "talknet.model")
+
     def __init__(self, device):
         self.model = talkNet(device)
         if not os.path.exists(TalkNetInference.PATH_WEIGHT):
@@ -126,6 +128,7 @@ class TalkNetInference():
         # return audioFeature
     
     def load_frames_for_avasd(self, track):
+        
         track.free_frames()
         track.load_frames()
         # cs  = .4

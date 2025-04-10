@@ -29,11 +29,13 @@ class Profile():
         Logger.new_line()
 
 class Profiler():
+    
+    profiles = {}
 
     def init():
-        Profiler.profiles = {}
+        pass
+        
 
-    
     def start(name=None):
         if not Logger.debug_mode:
             return

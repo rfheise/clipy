@@ -23,6 +23,9 @@ class Scene():
         self.centers = None
 
     @property
+    def frame_duration(self):
+        return self.frame_end - self.frame_start
+    @property
     def fps(self):
         if self._fps is None:
             # Open the video file.
