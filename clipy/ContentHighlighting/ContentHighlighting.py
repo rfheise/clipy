@@ -37,7 +37,6 @@ class ContentHighlighting():
                 #don't create a new timestamp if only scene is longer than max duration
                 if scene.end - scene.start >= self.max_duration:
                     Logger.debug("Scene Duration Too Long")
-                    return new_stamp
                 #make sure clip has at least one scene
                 new_stamp.start = scene.start
                 new_stamp.end = scene.end 
