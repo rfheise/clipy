@@ -8,8 +8,12 @@ from scenedetect import detect, ContentDetector
 class ChatGPTHighlighter(SubtitleHighlighter):
 
     default_sys_prompt = """
-    The following represents transcripts from a video represented as a timestamp: text pair. 
-    Please select the most interesting 5 - 10 moments and provide a timestamp and score for each and output in a json format. 
+    Analyze the provided video transcripts, formatted as start timestamp in seconds:text. 
+    Identify and select between 5 to 10 segments with potential for engaging, viral-ready video clips, each approximately 45 seconds.
+    Each clip should be AT MOST 60 seconds long and AT LEAST 30 seconds long.
+    The segments should be interesting, funny, or engaging, and suitable for sharing on social media platforms like TikTok, Instagram, or YouTube Shorts.
+    Make sure to carefully analyze the ENTIRE VIDEO before selecting the most interesting moments. 
+    For each selected segment, indicate start and end timestamps, a viral effectiveness score, and a descriptive title. Present findings in JSON format.
     """
 
     def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache, sub_model="tiny"):
@@ -36,16 +40,20 @@ class ChatGPTHighlighter(SubtitleHighlighter):
                                     "type": "integer",
                                     "description": "Virality score of moment from 0 - 100"
                                 },
-                                "timestamp": {
+                                "start": {
                                     "type": "integer",
-                                    "description": "The timestamp of the moment"
+                                    "description": "The starting timestamp of the moment"
                                 },
-                                "description": {
+                                "end": {
+                                    "type": "integer",
+                                    "description": "The end timestamp of the moment"
+                                },
+                                "title": {
                                     "type": "string",
-                                    "description": "The description of the moment"
+                                    "description": "A short description of the moment"
                                 }
                             },
-                            "required": ["score", "timestamp", "description"],
+                            "required": ["score", "start", "end", "title"],
                             "additionalProperties": False
                         }
                     }
@@ -65,13 +73,14 @@ class ChatGPTHighlighter(SubtitleHighlighter):
     def get_list_from_json(self, moments):
 
         timestamps = []
+        titles = []
         for moment in moments:
-            sub_id = int(moment["timestamp"])
-            if sub_id >= len(self.sub_gen.subtitles):
+            start = int(moment["start"])
+            end = int(moment["end"]) + 1
+            if end <= start:
+                Logger.log_warning("Start time is greater than end time in gpt query. Skipping")
                 continue
-            sub_timestamp = self.sub_gen.subtitles[sub_id].timestamp
-            start = sub_timestamp.start - self.approx_length/2
-            end = sub_timestamp.start + self.approx_length/2
+            # if start/end in middle of dialogue wait until the end
             for subtitle in self.sub_gen.subtitles:
                 # if start/end in middle of dialogue wait until the end
                 if start >= subtitle.timestamp.start and start <= subtitle.timestamp.end:
@@ -79,6 +88,7 @@ class ChatGPTHighlighter(SubtitleHighlighter):
                 if end >= subtitle.timestamp.start and end <= subtitle.timestamp.end:
                     end = subtitle.timestamp.end
             timestamps.append((start,end))
+
         
         return TimeStamps.from_nums(timestamps)
 
@@ -127,8 +137,8 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         return model_input
     
 if __name__ == "__main__":
-    video_file = "./videos/walk_the_line.mp4"
-    cache_file = "./.cache/tmp-walk-line.sav"
+    video_file = "./videos/films/red_river.mp4"
+    cache_file = "./.cache/tmp.sav"
     cache = Cache(dev=True)
     cache.load(cache_file)
     cache.clear('highlight')

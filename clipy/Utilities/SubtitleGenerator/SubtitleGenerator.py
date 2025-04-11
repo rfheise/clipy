@@ -196,9 +196,8 @@ class SubtitleGenerator():
         else:
             tmp_file = ".tmp_audio_file-"+str(random.randint(0,10**9))
         audio_file = tmp_file + ".mp3"
-        result = subprocess.run(['ffmpeg', '-i', self.fname, tmp_file + ".wav"],capture_output=True,text=True)
-        result = subprocess.run(['lame', '-b', "128",tmp_file + ".wav",audio_file],capture_output=True,text=True)
-        os.remove(tmp_file + ".wav")
+        result = subprocess.run(['ffmpeg', '-i', self.fname, '-b:a', '128k', tmp_file + ".mp3"],capture_output=True,text=True)
+        # result = subprocess.run(['lame', '-b', "128",tmp_file + ".wav",audio_file],capture_output=True,text=True)
         return audio_file
 
     def cleanup(self):
@@ -214,8 +213,8 @@ class SubtitleGenerator():
         return s + "]"
     
     def format_for_llm(self, fname=None):
-        count = iter(range(len(self.subtitles)))
-        txt = "\n".join([f"{next(count, 0)}: {s.text}" for s in self.subtitles])
+        # count = iter(range(len(self.subtitles)))
+        txt = "\n".join([f"{round(s.timestamp.start)}:{s.text.strip()}" for s in self.subtitles])
         if  fname:
             with open(fname, "w") as f:
                 f.write(txt)

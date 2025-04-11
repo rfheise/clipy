@@ -63,7 +63,8 @@ class OpenAIWhisper(SubtitleGenerator):
         
 
 if __name__ == "__main__":
-    sg = OpenAIWhisper("./videos/Episode S1E9.mp4",model_name="turbo")
+    sg = OpenAIWhisper("./videos/films/red_river.mp4",model_name="turbo")
     sg.generate_subtitles()
-    sg.to_srt(".cache/Episode S1E9.turbo.en.srt")
+    # sg.to_srt(".cache/Episode S1E9.turbo.en.srt")
+    sg.format_for_llm(".cache/red_river.llm.sub")
     # print(str(sg))

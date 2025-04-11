@@ -3,7 +3,6 @@
 # Requirements 
 ```
 ffmpeg 
-lame
 requirements in requirements.txt
 ```
 # Running The Editor
@@ -51,6 +50,8 @@ I intent to create a modular pipeline that lets me plug and play with various al
 - [X] Finish Prototype implementation
 - [ ] Optimize Code
     - [ ] Use torch data loaders for batched inference - S3FD and Talknet
+        - [X] S3FD
+        - [] TalkNet
     - [ ] see if I can tweak model to work with variable framerate & audio sampling without re-rendering
     - [ ] Try different subtitle presets for optimal performance
     - [ ] try different parameters for scene-detection library
@@ -66,16 +67,16 @@ I intent to create a modular pipeline that lets me plug and play with various al
         - [ ] strange outputs from openai whisper 
         - [ ]not sure how to fix but could slap some band-aids on it and pray they fix it
 - [ ] Tweak Video Outputs
-    * Custom Fonts
-    * Font Size
-    * Text Position
-    * Resolution
-    * Shot Cutting Parameters
-    * tweak gpt system prompts
+    - [ ] Custom Fonts
+    - [ ] Font Size
+    - [ ] Text Position
+    - [ ] Resolution
+    - [ ] Shot Cutting Parameters
+    - [ ] tweak gpt system prompts
 - [ ] Create As Module
     * make sure it's usable out of the box
     * find a way to easily distribute model weights
-    * Replace lame with ffmpeg call
+    - [X] Replace lame with ffmpeg call
     * Docker Container?
 
 # Acknowledgements  
