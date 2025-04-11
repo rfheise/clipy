@@ -60,24 +60,24 @@ I intent to create a modular pipeline that lets me plug and play with various al
     - [ ] Make data flow top -> down rather than all over the place
     - [ ] Review the code to make sure everything makes sense
 - [ ] Bug Fixes
-    - [ ] Weird Splits in outputs
-        - [ ] Should be an easy fix with a min scene duration
-        - [ ] Merge scenes until they hit min duration
+    - [X] Weird Splits in outputs
+        * Fixed using AdaptiveDetector instead of ContentDetector
     - [ ] Weird Subtitle Outputs
         - [ ] strange outputs from openai whisper 
         - [ ]not sure how to fix but could slap some band-aids on it and pray they fix it
-- [ ] Tweak Video Outputs
-    - [ ] Custom Fonts
-    - [ ] Font Size
-    - [ ] Text Position
-    - [ ] Resolution
-    - [ ] Shot Cutting Parameters
-    - [ ] tweak gpt system prompts
+    - [ ] Fix subtitle alignments using something like aeneas
+- [X] Tweak Video Outputs
+    - [X] Custom Fonts
+    - [X] Font Size
+    - [X] Text Position
+    - [X] Resolution
+    - [X] Shot Cutting Parameters
+    - [X] tweak gpt system prompts
 - [ ] Create As Module
-    * make sure it's usable out of the box
-    * find a way to easily distribute model weights
+    - [ ] make sure it's usable out of the box
+    - [X] find a way to easily distribute model weights
     - [X] Replace lame with ffmpeg call
-    * Docker Container?
+    - [ ]Docker Container?
 
 # Acknowledgements  
 The TalkNet & S3FD model weights and some preprocessing steps are modifed from this [repository](https://github.com/TaoRuijie/TalkNet-ASD)

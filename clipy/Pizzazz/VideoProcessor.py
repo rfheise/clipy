@@ -16,7 +16,9 @@ class VideoProcessor:
         Helper.write_video(frames, "./scene.tmp.mp4",fps=fps)
         new_video=mp.VideoFileClip("./scene.tmp.mp4")
         new_video.audio = audio
-        new_video.write_videofile(fname, codec="libx264", audio_codec="aac", logger=None)
+        new_video.write_videofile(fname, codec="libx264",
+                                  ffmpeg_params=["-crf", "18", "-preset", "medium"],
+                                   audio_codec="aac", logger=None)
         # os.remove("./scene.tmp.mp4")
 
     def render(self, output_dir="clips"):
@@ -29,6 +31,7 @@ class VideoProcessor:
             frames,audio = video.render()
             for pizzazz in self.pizzazz_list:
                 frames, audio = pizzazz.render(frames, audio, video)
+
             self.save_to_file(os.path.join(output_dir, f"clip-{video.id}.mp4"),
                               frames, audio, video.get_scenes()[0].fps)
             video.free_frames()

@@ -7,22 +7,13 @@ from scenedetect import detect, ContentDetector
 
 class ChatGPTHighlighter(SubtitleHighlighter):
 
-    default_sys_prompt = """
-    Analyze the provided video transcripts, formatted as start timestamp in seconds:text. 
-    Identify and select between 5 to 10 segments with potential for engaging, viral-ready video clips, each approximately 45 seconds.
-    Each clip should be AT MOST 60 seconds long and AT LEAST 30 seconds long.
-    The segments should be interesting, funny, or engaging, and suitable for sharing on social media platforms like TikTok, Instagram, or YouTube Shorts.
-    Make sure to carefully analyze the ENTIRE VIDEO before selecting the most interesting moments. 
-    For each selected segment, indicate start and end timestamps, a viral effectiveness score, and a descriptive title. Present findings in JSON format.
-    """
+    def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache, sub_model="tiny", num_clips=None):
 
-    def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache, sub_model="tiny"):
         sub_gen = OpenAIWhisper(video_file, model_name=sub_model)
+        self.num_clips = num_clips
         super().__init__(video_file, approx_length, cache=cache,sub_gen=sub_gen)
         self.model = model 
         self.sys_prompt = sys_prompt
-        if self.sys_prompt is None:
-            self.sys_prompt = ChatGPTHighlighter.default_sys_prompt
         self.client = OpenAI()
         self.output_format = {
         "format": {
@@ -64,8 +55,27 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         }
         }
 
+    @property
+    def default_sys_prompt(self):
+        return f"""
+    Analyze the provided video transcripts, formatted as start timestamp in seconds:text. 
+    Identify {self.num_clips} segments with the MOST potential for engaging, viral-ready video clips, each approximately 45 seconds.
+    Each clip should be AT MOST 60 seconds long and AT LEAST 30 seconds long.
+    The segments should be interesting, funny, or engaging, and suitable for sharing on social media platforms like TikTok, Instagram, or YouTube Shorts.
+    Make sure to carefully analyze the ENTIRE VIDEO before selecting the most interesting moments. 
+    For each selected segment, indicate start and end timestamps, a viral effectiveness score, and a descriptive title. Present findings in JSON format.
+    """
 
     def highlight_subtitles(self):
+
+        if self.num_clips is None:
+            dur = self.sub_gen.subtitles[-1].timestamp.end
+            #generate a clip for every 5 minutes of video
+            self.num_clips = int(dur / (5 * 60))
+
+        if self.sys_prompt is None:
+            self.sys_prompt = self.default_sys_prompt
+
         output_json = json.loads(self.call_api())
         subtitle_list = self.get_list_from_json(output_json["moments"])
         return subtitle_list

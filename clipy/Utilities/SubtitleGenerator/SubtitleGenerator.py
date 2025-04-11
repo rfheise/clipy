@@ -165,7 +165,7 @@ class SubtitleGenerator():
         start_hours, start_minutes, start_seconds, start_miliseconds = int(start_time // 3600), int((start_time % 3600) // 60), int(start_time % 60), format(int((start_time % 1) * 1000), "03d")
         return f"{start_hours:02}:{start_minutes:02}:{start_seconds:02},{start_miliseconds}"
     
-    def to_srt(self, srt_path, sub_duration=5):
+    def to_srt(self, srt_path, sub_duration=1):
         """Write the transcript to an SRT file based on the video's duration."""
         lines = []
         # Use tqdm to display progress for segment processing

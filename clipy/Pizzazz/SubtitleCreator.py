@@ -1,12 +1,13 @@
 from .Pizzazz import Pizzazz 
 from ..Utilities import OpenAIWhisper, GhostCache, Helper
-import cv2 
+import random
 
 class SubtitleCreator(Pizzazz):
 
     def __init__(self, subgen=None, cache = GhostCache()):
         super().__init__(cache)
-        self.subgen = subgen 
+        self.subgen = subgen
+        self.scale = None
         
     
     def init_subgen(self, clip):
@@ -23,10 +24,17 @@ class SubtitleCreator(Pizzazz):
     def render(self, frames, audio, clip):
 
         self.init_subgen(clip)
+        # self.color = random.choice(Helper.bright_colors)
+        self.color = Helper.Color.GOLDENROD.value
+        # self.color = Helper.Color.YELLOW.value
         subtitles = self.subgen.get_subtitles(clip.get_timestamp())
         frame_start = clip.get_start_frame()
         fps = clip.get_scenes()[0].fps
         for i, frame in enumerate(frames):
+            if self.scale is None:
+
+                self.scale = frame.shape[0] / 480
+
             frame_idx = i + frame_start 
             for subtitle in subtitles:
                 if (subtitle.timestamp.get_start_frame(fps) <= frame_idx\
@@ -38,14 +46,15 @@ class SubtitleCreator(Pizzazz):
 
         #TODO write subtitles to frame
         
-        max_width = frame.shape[1] - 20  # Set maximum width (with a margin)
-        font_path = './fonts/limelight.ttf'
-        font_size = 15
-        color = (255, 255, 255)  # White text
+        max_width = frame.shape[1] - 20 * self.scale  # Set maximum width (with a margin)
+        font_path = './fonts/Roboto.ttf'
+        font_size = 20 * self.scale
+        
         #get bottom corner
-        position = (int(frame.shape[1]/2), int(frame.shape[0]/2))  # Starting position (x, y)
+        position = (int(frame.shape[1]/2), 3*int(frame.shape[0]/4))  # Starting position (x, y)
 
-        frame = Helper.draw_wrapped_text(frame, text, position, font_path, font_size, color, max_width)
+        frame = Helper.draw_wrapped_text(frame, text, position, font_path, font_size,
+                                          self.color, max_width, self.scale, border_thickness=1)
         return frame
             
             

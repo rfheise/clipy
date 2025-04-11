@@ -1,6 +1,7 @@
 import cv2 
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np 
+import subprocess
 
 #this whole file was vibe coded with gpt 
 #lol I don't want to actually learn how to use cv2
@@ -41,14 +42,41 @@ def write_video(frames, output_path, fps):
     """
     # Get dimensions from the first frame.
     if len(frames[0].shape) == 2:  # Grayscale image
-        frames = [cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB) for frame in frames]
+        frames = [cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR) for frame in frames]
+    elif len(frames[0].shape) == 3:  # RGBA image
+        frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in frames]
     height, width = frames[0].shape[:2]
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
-    video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
+    # video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    # for frame in frames:
+    #     video_writer.write(frame)
+    # video_writer.release()
+    command = [
+        'ffmpeg',
+        '-y',                # Overwrite output file if it exists.
+        '-f', 'rawvideo',    # Input format: raw video.
+        '-pix_fmt', 'rgb24', # Pixel format of the raw data.
+        '-s', f'{width}x{height}', # Frame size.
+        '-r', str(fps),      # Frame rate.
+        '-i', '-',           # Input comes from standard input.
+        '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
+        '-crf', '18',         # CRF 0 for lossless quality.
+        '-preset', 'medium', # Use a slower preset for optimal compression.
+        output_path
+    ]
     
+    # Open a subprocess with FFmpeg.
+    process = subprocess.Popen(command, stdin=subprocess.PIPE,   
+                               stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
+    
+    # Write each frame's raw bytes to FFmpeg's stdin.
     for frame in frames:
-        video_writer.write(frame)
-    video_writer.release()
+        process.stdin.write(frame.tobytes())
+    
+    # Close stdin and wait for FFmpeg to finish.
+    process.stdin.close()
+    process.wait()
 
 def get_text_size(text, font):
     """
@@ -81,11 +109,16 @@ def wrap_text_pil(text, font, max_width):
         lines.append(current_line)
     return lines
 
-def draw_wrapped_text(frame, text, center, font_path, font_size, color, max_width, line_spacing=4):
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+
+def draw_wrapped_text(frame, text, center, font_path, font_size, color,
+                      max_width, scale=1, line_spacing=4,  border_thickness=1, border_color=(0, 0, 0)):
     """
-    Draws wrapped text on the given OpenCV frame using a custom TrueType font.
-    The text is wrapped if necessary so that no line exceeds max_width, and the
-    entire text block is centered on the given center coordinates.
+    Draws wrapped text with a border (stroke) on the given OpenCV frame using a custom TrueType font.
+    The text is wrapped so that no line exceeds max_width, and the text block is centered on the given center.
+    The border is drawn around the letters using Pillow's stroke parameters.
 
     Parameters:
       frame: OpenCV image (BGR).
@@ -96,46 +129,55 @@ def draw_wrapped_text(frame, text, center, font_path, font_size, color, max_widt
       color: Text color in RGB.
       max_width: Maximum width in pixels for wrapping text.
       line_spacing: Additional vertical spacing between lines.
-    
+      border_thickness: Thickness of the border (stroke).
+      border_color: Color of the border in RGB.
+
     Returns:
-      OpenCV image with text drawn on it.
+      OpenCV image (BGR) with the outlined text drawn on it.
+      
+    Note:
+      This function assumes helper functions `wrap_text_pil` (to wrap the text) and 
+      `get_text_size` (to measure text size) are defined.
     """
     # Convert the OpenCV BGR image to a PIL RGB image.
     pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     draw = ImageDraw.Draw(pil_img)
-    
     # Load the custom font.
     font = ImageFont.truetype(font_path, font_size)
-    
+
     # Wrap the text.
     lines = wrap_text_pil(text, font, max_width)
-    
-    # Calculate block dimensions.
-    line_widths = []
-    line_heights = []
+
+    # Calculate dimensions of the text block.
+    line_widths, line_heights = [], []
     total_height = 0
     for line in lines:
         w, h = get_text_size(line, font)
         line_widths.append(w)
         line_heights.append(h)
         total_height += h
-    # Add spacing between lines.
     total_height += line_spacing * (len(lines) - 1)
-    
-    # For horizontal centering, we use the maximum line width.
     block_width = max(line_widths) if line_widths else 0
-    
-    # Compute the top-left coordinate of the text block.
+
+    # Compute top-left coordinate so that the text block is centered.
     top_left_x = int(center[0] - block_width / 2)
     top_left_y = int(center[1] - total_height / 2)
-    
-    # Draw each line centered horizontally relative to the center.
+
+    # Draw each line with the border using stroke parameters.
     y = top_left_y
     for i, line in enumerate(lines):
         line_width = line_widths[i]
         x = int(center[0] - line_width / 2)
-        draw.text((x, y), line, font=font, fill=color)
+        # Draw the text with stroke (border).
+        draw.text(
+            (x, y),
+            line,
+            font=font,
+            fill=color,
+            stroke_width=max(round(border_thickness * scale),1),
+            stroke_fill=border_color
+        )
         y += line_heights[i] + line_spacing
 
-    # Convert the PIL image back to OpenCV BGR format.
+    # Convert back to OpenCV BGR format.
     return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)

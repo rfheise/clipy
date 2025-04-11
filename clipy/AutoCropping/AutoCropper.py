@@ -24,7 +24,7 @@ class AutoCropper():
         Profiler.start("crop")
         for t in self.timestamps:
             clip = Clip.init_from_timestamp(self.video_file, t, cache=self.cache)
-            self.cache.save()
+            # self.cache.save()
             Logger.new_line()
             Logger.log(f"Runnning AutoCropper on Clip {clip.id}")
             self.detect_tracks_in_scenes(clip)
