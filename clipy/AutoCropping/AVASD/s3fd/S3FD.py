@@ -85,7 +85,7 @@ class S3FD():
         dataset = S3FDImageSet(scenes)
         self.w = dataset.w 
         self.h = dataset.h
-        loader = DataLoader(dataset, batch_size=32,num_workers=4, shuffle=False)
+        loader = DataLoader(dataset, batch_size=32,num_workers=0, shuffle=False)
         bboxes = []
         with torch.no_grad():
             for x in tqdm(loader, total=len(loader)):

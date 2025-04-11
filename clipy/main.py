@@ -31,12 +31,12 @@ def main():
     highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="large")
     intervals = highlighter.highlight_intervals()
     # intervals.insert(0,Timestamp(1498,1546))
-    # cache.save(cache_file)
+    cache.save(cache_file)
 
     # Cropping the video
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
-    # cache.save(cache_file)
+    cache.save(cache_file)
 
     # # Adding pizzazz to the subtitles
     creator = VideoProcessor(clips, cache = cache)

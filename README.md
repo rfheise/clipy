@@ -41,7 +41,7 @@ I intent to create a modular pipeline that lets me plug and play with various al
 
 [![Watch the Demo Video](https://api.habits.heise.ai/media/other/video2.jpg)](https://www.youtube.com/watch?v=y4C2XMpcZLY)
 
-4. Upload ✅
+4. Upload
     Automatically uploads content to video platform if it passes quality check and uploads it to platform. 
     * I intend to automate this part but it will initially be performed manually 
 
@@ -51,7 +51,7 @@ I intent to create a modular pipeline that lets me plug and play with various al
 - [ ] Optimize Code
     - [ ] Use torch data loaders for batched inference - S3FD and Talknet
         - [X] S3FD
-        - [] TalkNet
+        - [ ] TalkNet
     - [ ] see if I can tweak model to work with variable framerate & audio sampling without re-rendering
     - [ ] Try different subtitle presets for optimal performance
     - [ ] try different parameters for scene-detection library
@@ -64,7 +64,7 @@ I intent to create a modular pipeline that lets me plug and play with various al
         * Fixed using AdaptiveDetector instead of ContentDetector
     - [ ] Weird Subtitle Outputs
         - [ ] strange outputs from openai whisper 
-        - [ ]not sure how to fix but could slap some band-aids on it and pray they fix it
+        - [ ] not sure how to fix but could slap some band-aids on it and pray they fix it
     - [ ] Fix subtitle alignments using something like aeneas
 - [X] Tweak Video Outputs
     - [X] Custom Fonts
@@ -77,7 +77,7 @@ I intent to create a modular pipeline that lets me plug and play with various al
     - [ ] make sure it's usable out of the box
     - [X] find a way to easily distribute model weights
     - [X] Replace lame with ffmpeg call
-    - [ ]Docker Container?
+    - [ ] Docker Container?
 
 # Acknowledgements  
 The TalkNet & S3FD model weights and some preprocessing steps are modifed from this [repository](https://github.com/TaoRuijie/TalkNet-ASD)
