@@ -2,6 +2,7 @@ import cv2
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np 
 import subprocess
+from ..Logging.Logger import Logger
 
 #this whole file was vibe coded with gpt 
 #lol I don't want to actually learn how to use cv2
@@ -51,19 +52,34 @@ def write_video(frames, output_path, fps):
     # for frame in frames:
     #     video_writer.write(frame)
     # video_writer.release()
-    command = [
-        'ffmpeg',
-        '-y',                # Overwrite output file if it exists.
-        '-f', 'rawvideo',    # Input format: raw video.
-        '-pix_fmt', 'rgb24', # Pixel format of the raw data.
-        '-s', f'{width}x{height}', # Frame size.
-        '-r', str(fps),      # Frame rate.
-        '-i', '-',           # Input comes from standard input.
-        '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
-        '-crf', '18',         # CRF 0 for lossless quality.
-        '-preset', 'medium', # Use a slower preset for optimal compression.
-        output_path
-    ]
+    if not Logger.debug_mode:
+        command = [
+            'ffmpeg',
+            '-y',                # Overwrite output file if it exists.
+            '-f', 'rawvideo',    # Input format: raw video.
+            '-pix_fmt', 'rgb24', # Pixel format of the raw data.
+            '-s', f'{width}x{height}', # Frame size.
+            '-r', str(fps),      # Frame rate.
+            '-i', '-',           # Input comes from standard input.
+            '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
+            '-crf', '18',         # CRF 0 for lossless quality.
+            '-preset', 'medium', # Use a slower preset for optimal compression.
+            output_path
+        ]
+    else:
+        command = [
+            'ffmpeg',
+            '-y',                # Overwrite output file if it exists.
+            '-f', 'rawvideo',    # Input format: raw video.
+            '-pix_fmt', 'rgb24', # Pixel format of the raw data.
+            '-s', f'{width}x{height}', # Frame size.
+            '-r', str(fps),      # Frame rate.
+            '-i', '-',           # Input comes from standard input.
+            '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
+            '-crf', '30',         # CRF 0 for lossless quality.
+            '-preset', 'fast', # Use a slower preset for optimal compression.
+            output_path
+        ]
     
     # Open a subprocess with FFmpeg.
     process = subprocess.Popen(command, stdin=subprocess.PIPE,   

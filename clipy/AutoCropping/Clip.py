@@ -34,7 +34,7 @@ class Clip():
         for scene in self.scenes:
             scene.load_frames(mode="render")
             center = scene.get_center()
-            keep_ratio = (center == scene.tracks[0].get_center_of_frames())
+            keep_ratio = (center == scene.scene_center)
             for frame in scene.get_frames():
                 if self.height is None or self.width is None:
                     self.set_dims(frame)

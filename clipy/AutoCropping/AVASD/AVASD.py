@@ -113,7 +113,6 @@ class AVASD(AutoCropper):
         scene_faces = self.detect_faces(scenes)
         count = 0
         for scene in scenes:
-            frames =  scene.get_frames()
             facial_tracks = []
             for i in range(scene.frame_duration):
                 frame_idx = i + scene.frame_start
@@ -147,12 +146,12 @@ class AVASD(AutoCropper):
             
             #after tracks are processed interp
             #the bboxes to remove gaps between frames
-            for track in facial_tracks:
-                track.interp_frames()
+            # for track in facial_tracks:
+            #     track.interp_frames()
             
             if len(facial_tracks) == 0:
 
-                facial_tracks = [Track.init_from_raw_frames(scene, frames)]
+                facial_tracks = []
 
             scene.set_tracks(facial_tracks)
             scene.free_frames()

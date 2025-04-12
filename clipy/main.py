@@ -28,19 +28,23 @@ def main():
 
 
     # Highlighting the subtitles
-    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="large")
+    highlighter = ChatGPTHighlighter(video_path,model="gpt-4o", cache=cache, sub_model="turbo")
     intervals = highlighter.highlight_intervals()
     # intervals.insert(0,Timestamp(1498,1546))
     cache.save(cache_file)
 
     # Cropping the video
+    cache.clear("videos")
+    for i in range(30):
+        cache.clear(f"clip-{i}-scenes")
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
     cache.save(cache_file)
 
     # # Adding pizzazz to the subtitles
     creator = VideoProcessor(clips, cache = cache)
-    creator.add_pizzazz(ResizeCreator(new_size=(1080,1920),cache=cache))
+    if not Logger.debug:
+        creator.add_pizzazz(ResizeCreator(new_size=(1080,1920),cache=cache))
     creator.add_pizzazz(SubtitleCreator(cache=cache))
     creator.render(output_dir=out_dir)
     # cache.save(cache_file)

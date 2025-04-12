@@ -19,9 +19,10 @@ img_mean = np.array([104., 117., 123.])[:, np.newaxis, np.newaxis].astype('float
 
 class S3FDImageSet(Dataset):
 
-    def __init__(self, scenes):
+    def __init__(self, scenes, scale):
 
         self.scenes = scenes
+        self.scale = scale
         self.current_scene = 0
         self.counter = 0
         self.frames = []
@@ -48,7 +49,7 @@ class S3FDImageSet(Dataset):
         return self.scale_image(self.frames[idx])
     
     def scale_image(self, frame):
-        scaled_img = cv2.resize(frame, dsize=(0, 0), fx=1, fy=1, interpolation=cv2.INTER_LINEAR)
+        scaled_img = cv2.resize(frame, dsize=(0, 0), fx=self.scale, fy=self.scale, interpolation=cv2.INTER_LINEAR)
         scaled_img = np.swapaxes(scaled_img, 1, 2)
         scaled_img = np.swapaxes(scaled_img, 1, 0)
         scaled_img = scaled_img[[2, 1, 0], :, :]
@@ -77,14 +78,16 @@ class S3FD():
         self.net.eval()
         # print('[S3FD] finished loading (%.4f sec)' % (time.time() - tstamp))
     
-    def detect_faces(self, scenes, conf_th=0.8, scales=[1]):
+    def detect_faces(self, scenes, conf_th=0.5, scales=[.5],min_face_percentage=2):
 
         # all frames from input video shoiuld be the same size
+        
         self.conf_th = conf_th
-
-        dataset = S3FDImageSet(scenes)
+        self.scale = scales[0]
+        dataset = S3FDImageSet(scenes, self.scale)
         self.w = dataset.w 
         self.h = dataset.h
+        self.min_face_size = round(min_face_percentage * self.w * self.h / 100)
         loader = DataLoader(dataset, batch_size=32,num_workers=0, shuffle=False)
         bboxes = []
         with torch.no_grad():
@@ -112,6 +115,8 @@ class S3FD():
                     j += 1
 
             keep = nms_(bboxes, 0.1)
+            bboxes = bboxes[keep]
+            keep = (bboxes[:, 3] - bboxes[:,1]) * (bboxes[:, 2] - bboxes[:,0]) > self.min_face_size
             bboxes = bboxes[keep]
             ret.append(bboxes)
         return ret

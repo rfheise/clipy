@@ -66,6 +66,8 @@ I intent to create a modular pipeline that lets me plug and play with various al
         - [ ] strange outputs from openai whisper 
         - [ ] not sure how to fix but could slap some band-aids on it and pray they fix it
     - [ ] Fix subtitle alignments using something like aeneas
+    - [ ] Make it so scene has several centers depending on main track in focus
+        * this will make the cropping look a lot more natural
 - [X] Tweak Video Outputs
     - [X] Custom Fonts
     - [X] Font Size

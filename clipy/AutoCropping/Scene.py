@@ -21,10 +21,27 @@ class Scene():
         self._fps = None
         self.tracks = None
         self.centers = None
+        self._scene_center = (None, None)
 
     @property
     def frame_duration(self):
         return self.frame_end - self.frame_start
+    
+    @property
+    def scene_center(self):
+        if self._scene_center[0] is None:
+            # Open the video file.
+            cap = cv2.VideoCapture(self.video_file)
+
+            # Get the frame at the start of the scene.
+            cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_start)
+            ret, frame = cap.read()
+            if not ret:
+                Logger.log_error("indexed frame not in video")
+                exit(4)
+            self._scene_center = (frame.shape[1] // 2, frame.shape[0] // 2)
+            cap.release()
+        return self._scene_center
     
     @property
     def fps(self):
@@ -54,10 +71,17 @@ class Scene():
             self.end = timestamp.end 
             self.frame_end = Scene.get_frame_at_timestamp(self.video_file, timestamp.end)
     
-    def get_frames(self, mode="model"):
+    def get_frames(self, start = None, end = None, mode="model"):
+        
         if self.frames is None:
             self.load_frames(mode)
-        return self.frames 
+        if start is None or end is None:
+            return self.frames 
+        ret = []
+        for i,frames in enumerate(self.frames):
+            if i + self.frame_start >= start and i + self.frame_start <= end:
+                ret.append(self.frames[i])
+        return ret
 
     def free_frames(self):
         self.frames = None    
@@ -154,11 +178,14 @@ class Scene():
     
     def set_centers(self):
 
-        t = type(self.tracks[0])
-        if t is FacialTrack:
+        s = len(self.tracks) > 0
+        for track in self.tracks:
+            if isinstance(track, FacialTrack) is False:
+                s = False
+        if s:
             self.centers = [self.get_centers_from_facial_tracks()]
         else:
-            self.centers = [self.tracks[0].get_center()]
+            self.centers = [self.scene_center]
 
     def get_center(self):
 

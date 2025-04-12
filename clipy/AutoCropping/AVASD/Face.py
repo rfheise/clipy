@@ -1,6 +1,6 @@
 from ..Track import Track 
 from ..Frame import Frame 
-from ...Utilities import Logger, Helper
+from ...Utilities import Logger, Helper, Timestamp, TimeStamps
 import cv2 
 import moviepy.editor as mp
 import os
@@ -154,8 +154,9 @@ class FacialTrack(Track):
             dim_funcs.append(interpfn)
     
         conf_func = interp1d(frame_nums, conf, bounds_error=False, fill_value="extrapolate")
-        
-        for i,frame in enumerate(self.scene.get_frames()):
+        start = self.faces[0].idx
+        end = self.faces[-1].idx
+        for i,frame in enumerate(self.scene.get_frames(start=start, end=end)):
             
             setinel = False
             for face in self.frames:

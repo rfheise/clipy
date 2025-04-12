@@ -24,8 +24,8 @@ class SubtitleCreator(Pizzazz):
     def render(self, frames, audio, clip):
 
         self.init_subgen(clip)
-        # self.color = random.choice(Helper.bright_colors)
-        self.color = Helper.Color.GOLDENROD.value
+        self.color = random.choice(Helper.bright_colors)
+        # self.color = Helper.Color.GOLDENROD.value
         # self.color = Helper.Color.YELLOW.value
         subtitles = self.subgen.get_subtitles(clip.get_timestamp())
         frame_start = clip.get_start_frame()

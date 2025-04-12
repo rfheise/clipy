@@ -84,6 +84,7 @@ class ChatGPTHighlighter(SubtitleHighlighter):
 
         timestamps = []
         titles = []
+        moments.sort(key=lambda x: x["score"], reverse=True)
         for moment in moments:
             start = int(moment["start"])
             end = int(moment["end"]) + 1
