@@ -6,7 +6,7 @@ import sys
 import os
 
 def main():
-    # Logger.debug_mode = False
+    Logger.debug_mode = False
     if len(sys.argv) != 3:
         Logger.log_error("Usage: python main.py <video_path> <output_dir>")
         sys.exit(1)

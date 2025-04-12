@@ -33,7 +33,7 @@ class TalkNetInference():
         audio = self.load_audio_for_avasd(track)
         if Logger.debug_mode:
             self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip_id)
-            score = self.eval_model(video, audio, track.scene.fps)
+        score = self.eval_model(video, audio, track.scene.fps)
         return score
     
     def write_out(self, video, audio,fps, track, clip_id):
