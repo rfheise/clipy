@@ -34,16 +34,16 @@ def main():
     cache.save(cache_file)
 
     # Cropping the video
-    cache.clear("videos")
-    for i in range(30):
-        cache.clear(f"clip-{i}-scenes")
+    # cache.clear("videos")
+    # for i in range(30):
+    #     cache.clear(f"clip-{i}-scenes")
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
     cache.save(cache_file)
 
     # # Adding pizzazz to the subtitles
     creator = VideoProcessor(clips, cache = cache)
-    if not Logger.debug:
+    if not Logger.debug_mode:
         creator.add_pizzazz(ResizeCreator(new_size=(1080,1920),cache=cache))
     creator.add_pizzazz(SubtitleCreator(cache=cache))
     creator.render(output_dir=out_dir)

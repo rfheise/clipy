@@ -68,6 +68,7 @@ I intent to create a modular pipeline that lets me plug and play with various al
     - [ ] Fix subtitle alignments using something like aeneas
     - [ ] Make it so scene has several centers depending on main track in focus
         * this will make the cropping look a lot more natural
+    - [ ] Fix debug mode bug that causes bboxes to be in BGR instead of RGB
 - [X] Tweak Video Outputs
     - [X] Custom Fonts
     - [X] Font Size
