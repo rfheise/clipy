@@ -6,20 +6,19 @@ from ..Profiler.Profiler import Profiler
 class Cache():
 
     cache_levels = ["basic", "dev", "debug"]
-    def __init__(self, *args, **kwargs):
 
-        for level in Cache.cache_levels:
-            setattr(self, level, False)
+    def __init__(self, level="basic", *args, **kwargs):
 
-        for kwarg in kwargs.keys():
-            #sets all previous levels to true if current level is true
-            if kwargs[kwarg]:
-                try:
-                    idx = Cache.cache_levels.index(kwarg)
-                    for i in range(idx + 1):
-                        setattr(self, Cache.cache_levels[i], True)
-                except ValueError:
-                    pass 
+        if level not in Cache.cache_levels:
+            Logger.log_error(f"Cache Level {level} not in {Cache.cache_levels}")
+            exit(1)
+
+        for lvl in Cache.cache_levels:
+            setattr(self, lvl, False)
+
+        idx = Cache.cache_levels.index(level)
+        for i in range(idx + 1):
+            setattr(self, Cache.cache_levels[i], True)
         
         self.init_cache()
         self.save_file = None

@@ -1,5 +1,6 @@
 import time
-from ..Logging import Logger 
+from ..Config.Config import Config
+from ..Logging.Logger import Logger
 from collections import defaultdict
 
 class Profile():
@@ -37,7 +38,7 @@ class Profiler():
         
 
     def start(name=None):
-        if not Logger.debug_mode:
+        if not Config.use_profiler:
             return
         if name is None:
             name = "total"
@@ -46,7 +47,7 @@ class Profiler():
         Profiler.profiles[name].start()
     
     def stop(name=None):
-        if not Logger.debug_mode:
+        if not Config.use_profiler:
             return
         summary = False 
         if name is None:
