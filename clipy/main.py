@@ -1,7 +1,7 @@
 from .ContentHighlighting import ChatGPTHighlighter
 from .AutoCropping import AVASD
 from .Pizzazz import VideoProcessor, SubtitleCreator, ResizeCreator
-from .Utilities import Logger, Cache, Timestamp, Profiler, Config
+from .Utilities import Logger, Cache, Timestamp, Profiler, Config, Helper
 import sys
 import os
 
@@ -38,6 +38,7 @@ def main():
     cache.save(cache_file)
 
     # Cropping the video
+    cache.clear("videos")
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
     cache.save(cache_file)
@@ -47,7 +48,7 @@ def main():
 
     
     if not Config.debug_mode:
-
+        pass
         #resize the output video
         creator.add_pizzazz(ResizeCreator(new_size=(1080,1920),cache=cache))
 

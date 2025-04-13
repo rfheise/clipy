@@ -46,7 +46,7 @@ def write_video(frames, output_path, fps):
     if len(frames[0].shape) == 2:  # Grayscale image
         frames = [cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR) for frame in frames]
     elif len(frames[0].shape) == 3:  # RGBA image
-        frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in frames]
+        frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames]
     height, width = frames[0].shape[:2]
     # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
     # video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))

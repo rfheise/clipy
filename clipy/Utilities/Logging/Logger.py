@@ -38,7 +38,7 @@ class PrintLog(Log):
         print(f"WARNING: {message}", file=sys.stderr)
 
     def debug(self, message):
-        print(f"Debug: {message}")
+        print(f"DEBUG: {message}")
     
     def new_line(self):
         return print()
@@ -46,6 +46,7 @@ class PrintLog(Log):
 class Logger():
     default_logs = [PrintLog()]
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
     def init(logs=None):
         
         if logs is None:

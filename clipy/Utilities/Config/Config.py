@@ -9,16 +9,11 @@ class Config():
     def init(debug=False):
 
         Config.args = Config.init_args()
-
-        if debug:
-            Config.init_debug()
-
         Config.debug_mode = Config.args.debug_mode
+        if Config.debug_mode:
+            Config.init_debug()
         Config.device = Config.args.device
         Config.use_profiler = Config.args.use_profiler
-        
-        if Config.debug_mode:
-            print("Warning: Debug Mode Set To True")
     
     def init_args():
 
@@ -53,5 +48,4 @@ class Config():
         Config.args.subtitle_model = "tiny.en"
         Config.args.cache_level = "dev"
         Config.args.cache_file = "fd_test.sav"
-        print(Config.args.no_preprocess_video)
 

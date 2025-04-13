@@ -18,6 +18,7 @@ torch.set_num_threads(8)
 class AVASD(AutoCropper):
 
     def __init__(self, video_path, clips, face_detection_model=S3FD,avasd_model=TalkNet, cache=GhostCache()):
+        
         super().__init__(video_path, clips, cache=cache)
         self.fdm = face_detection_model(device=Config.device)
         #number of failed detections before face is rejected
@@ -28,6 +29,7 @@ class AVASD(AutoCropper):
     def detect_tracks_in_scenes(self, clip):
         
         Logger.debug(str(clip.get_timestamp()))
+        self.cache.clear(f"clip-{clip.id}-scenes")
         if self.cache.get_item(f"clip-{clip.id}-scenes") is not None:
             scenes = self.cache.get_item(f"clip-{clip.id}-scenes")
             clip.set_scenes(scenes)
@@ -47,24 +49,12 @@ class AVASD(AutoCropper):
             scene.free_frames_from_tracks()
         self.cache.set_item(f"clip-{clip.id}-scenes", clip.get_scenes(), level="dev")
         
-        
-    
-    def draw_bbox_around_facial_tracks(self, dirname, scenes):
-        
-        os.makedirs(dirname, exist_ok=True)
-        count = 0
-        for scene in scenes:
-            for track in scene:
-                count += 1
-                if type(track) is FacialTrack:
-                    track.render_bbox_video(os.path.join(dirname, f"track-{count}.mp4"))
 
     def draw_bbox_around_scene(self, fname, scenes):
         #was really really tired so started to get sloppy around this point
         #definitely needs re-done
         for scene in scenes:
-            for track in scene:
-                track.free_frames()
+            scene.free_frames_from_tracks()
         for scene in scenes:
             for track in scene:
                 track.load_frames(mode="render")
@@ -78,13 +68,15 @@ class AVASD(AutoCropper):
         
         frames = []
         for scene in scenes:
-            frames.extend(scene.get_frames())
+            frames.extend(scene.get_frames(mode="render"))
         Helper.write_video(frames, "./.cache/scene.tmp.mp4",fps=scene.fps)
         new_video=mp.VideoFileClip("./.cache/scene.tmp.mp4")
         video = mp.VideoFileClip(self.video_file)
         audio = video.audio.subclip(scenes[0].start, scenes[-1].end)
         new_video.audio = audio
         new_video.write_videofile(fname, codec="libx264", audio_codec="aac", logger=None)
+        for scene in scenes:
+            scene.free_frames_from_tracks()
         os.remove("./.cache/scene.tmp.mp4")
         
         
@@ -185,6 +177,14 @@ class AVASD(AutoCropper):
 
     def get_score(self, track, clip_id):
         return self.avasd_model.get_score(track, clip_id)
+    
+    def crop(self):
+        
+        if not Config.args.no_preprocess_video:
+            self.cache.clear("scenes")
+            # TODO remove this and make TalkNet work with variable fps & audio sample rates
+            self.video_file = Helper.preprocess_video(self.video_file)
+        return super().crop()
             
 
 if __name__ == "__main__":

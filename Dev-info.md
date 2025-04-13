@@ -17,8 +17,6 @@ I want to get to a point where each section of the pipeline has several differen
     - [ ] Use torch data loaders for batched inference - S3FD and Talknet
         - [X] S3FD
         - [ ] TalkNet
-    - [ ] see if I can tweak model to work with variable framerate & audio sampling without re-rendering
-        - [ ] As a band-aid solution re-render facial tracks to appropriate frame rate & audio sampling rate rather than the whole video
     - [ ] Tweak Settings For Optimal Performance
         - [ ] TalkNet
         - [ ] S3FD
@@ -49,6 +47,8 @@ I want to get to a point where each section of the pipeline has several differen
 
 ## Features
 
+- [ ] tweak model inputs to work with variable framerate & audio sampling without re-rendering or re-render only needed clips
+        - [X] As a band-aid solution re-render facial tracks to appropriate frame rate & audio sampling rate rather than the whole video
 - [ ] Add Various PIZZAZZ items
     - [ ] Background Music Based Upon Mood
     - [ ] Speaker Diarization
@@ -76,6 +76,7 @@ I want to get to a point where each section of the pipeline has several differen
 - [ ] Add custom arguments to main
 - [ ] Implement Professional Logger
 - [ ] Implement Professional Config
+- [ ] Make Test Suite to run before pushing to make sure there aren't any breaking changes with a commit
 
 # The Pipeline
 
@@ -98,6 +99,9 @@ This is the second step in the pipeline. It takes in the input video & timestamp
 
 ### AVASD (Audio Visual Active Speaker Detection)
 
+The input video has to be 25fps constant frame rate and the audio has to be sampled at 16000hz to work with TalkNet. Making this work with any kind of video file is in the to do list. I want to try to get TalkNet to work with any kind of input video using padding but that would require re-training talknet. This step could also be removed by only re-rendering the input for TalkNet but that seems like a grift and would take work.
+
+*re-renders input video to be 25fps & 16KHZ
 * For each clip it use a pre-trained S3FD model to determine all the facial tracks in the each video cut in the input clip
 * Uses TalkNet model to identify the active speakers
     * Takes in the facial tracks and clip audio
@@ -136,9 +140,15 @@ This is the final step in the pipeline. It takes as input all of the clips that 
 
 TODO
 
+# Debug Mode 
+This mode is useful for development!
 
+What does debug mode do?
 
+* Caches & Loads Everything 
+    * Ensures you don't have to re-execute the entire pipeline to test your feature
 
-
-
-
+* Useful logs
+    * Prints useful logging messages
+    * Saves facial tracks for S3FD
+    * Saves Bounding Boxes for AVASD

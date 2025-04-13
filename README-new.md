@@ -59,9 +59,6 @@ TODO make it easy to tweak model params with arguments
 
 ## Information about running
 
-The input video has to be 25fps constant frame rate and the audio has to be sampled at 16000hz. Making this work with any kind of video file is in the to do list. This could easily be resolved by slapping on a ffmpeg render before clipy is ran but to maintain the original video quality it would take forever to run. You can format your input video using HandBrake.
-
-
 You need a gpu to run this software efficiently. Right now it takes ~10 minutes to process an hour of content using my 4090 with the turbo subtitle model. It takes ~1.5hrs to process an hour of content on my mac mini using the cpu with tiny.en subtitle model. 
 
 You can also try to use gpt-o4-mini instead of gpt-4o since it is 1/10th of the cost. However, I've found that the results are significantly worse. 
