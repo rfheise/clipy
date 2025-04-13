@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np 
 import subprocess
 from ..Logging.Logger import Logger
+from ..Config.Config import Config
 
 #this whole file was vibe coded with gpt 
 #lol I don't want to actually learn how to use cv2
@@ -52,7 +53,7 @@ def write_video(frames, output_path, fps):
     # for frame in frames:
     #     video_writer.write(frame)
     # video_writer.release()
-    if not Logger.debug_mode:
+    if not Config.debug_mode:
         command = [
             'ffmpeg',
             '-y',                # Overwrite output file if it exists.

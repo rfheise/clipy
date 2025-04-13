@@ -64,9 +64,11 @@ class Cache():
         Profiler.stop("caching")
         
     def save(self, fname=None):
+        if self.save_file is None:
+            Logger.debug("Cache file not set skipping save")
+            return
         Profiler.start("caching")
-        if self.save_file is not None:
-            fname = self.save_file
+        fname = self.save_file
         if fname is None:
             Logger.log_warning("Cache File Not Specified")
             return

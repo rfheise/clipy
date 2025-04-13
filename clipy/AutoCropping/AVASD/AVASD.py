@@ -1,4 +1,4 @@
-from ...Utilities import GhostCache, Logger, Helper, Timestamp, Profiler
+from ...Utilities import GhostCache, Logger, Helper, Timestamp, Profiler, Config
 from ..AutoCropper import AutoCropper
 from .Face import Face, FacialTrack
 from ..Track import Track
@@ -19,11 +19,11 @@ class AVASD(AutoCropper):
 
     def __init__(self, video_path, clips, face_detection_model=S3FD,avasd_model=TalkNet, cache=GhostCache()):
         super().__init__(video_path, clips, cache=cache)
-        self.fdm = face_detection_model(device=Logger.device)
+        self.fdm = face_detection_model(device=Config.device)
         #number of failed detections before face is rejected
-        self.num_failed_det = 10
-        self.min_frames_in_track = 20
-        self.avasd_model = avasd_model(Logger.device)
+        self.num_failed_det = Config.args.num_failed_det
+        self.min_frames_in_track = Config.args.min_frames_in_track
+        self.avasd_model = avasd_model(Config.device)
     
     def detect_tracks_in_scenes(self, clip):
         
@@ -39,7 +39,7 @@ class AVASD(AutoCropper):
         Profiler.start("speaker detection")
         self.score_tracks(clip.get_scenes(), clip.id)
         Profiler.stop("speaker detection")
-        if Logger.debug_mode:
+        if Config.debug_mode:
             Logger.debug(f"Saving Bounding Boxes For Clip")
             os.makedirs("./debug/bboxes", exist_ok=True)
             self.draw_bbox_around_scene( f"./debug/bboxes/bboxes-{clip.id}.mp4", clip.get_scenes())
@@ -159,7 +159,9 @@ class AVASD(AutoCropper):
 
     def detect_faces(self, scenes):
         
-        bboxes = self.fdm.detect_faces(scenes)
+        bboxes = self.fdm.detect_faces(scenes,scales = [Config.args.scale_s3fd],
+                                        conf_th=Config.args.conf_th_s3fd,
+                                        min_face_percentage=Config.args.min_face_percentage)
         scene_faces = []
         curr_frame = scenes[0].frame_start
         frames = [frame for scene in scenes for frame in scene.get_frames()]

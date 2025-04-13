@@ -1,6 +1,7 @@
 import sys
 import torch 
 import os
+from ..Config.Config import Config
 
 class Log():
 
@@ -43,10 +44,16 @@ class PrintLog(Log):
         return print()
 
 class Logger():
-    logs = [PrintLog()]
+    default_logs = [PrintLog()]
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    def __init__(self):
-        pass 
+    def init(logs=None):
+        
+        if logs is None:
+            logs = Logger.default_logs
+        Logger.logs = logs
+        Logger.log(f"Using device {Config.device}")
+        if Config.debug_mode:
+            Logger.log(f"Debug mode is enabled")
 
     def new_line():
         for log in Logger.logs:
@@ -65,10 +72,10 @@ class Logger():
             log.log_warning(message)
     
     def debug(message):
-        if not Logger.debug_mode:
+        if not Config.debug_mode:
             return
         for log in Logger.logs:
             log.debug(message)
 
-Logger.log(f"Using device {Logger.device}")
+
 

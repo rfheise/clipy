@@ -10,6 +10,7 @@ import io
 import torchaudio
 import whisper
 from ..Logging.Logger import Logger 
+from ..Config.Config import Config
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -21,7 +22,7 @@ class OpenAIWhisper(SubtitleGenerator):
         self.model_name = model_name
         self.no_speech_prob_threshold = no_speech_prob_threshold
         self.audio_segment = None
-        self.device = Logger.device
+        self.device = Config.device
         self.sample_rate = sample_rate
 
     @property

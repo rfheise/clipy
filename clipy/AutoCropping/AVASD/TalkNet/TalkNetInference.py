@@ -6,7 +6,7 @@ import math
 from scipy.io import wavfile
 import torch 
 import os
-from ....Utilities import Logger, Helper
+from ....Utilities import Logger, Helper, Config
 import moviepy.editor as mp
 import random
 import subprocess
@@ -31,7 +31,7 @@ class TalkNetInference():
 
         video = self.load_frames_for_avasd(track)
         audio = self.load_audio_for_avasd(track)
-        if Logger.debug_mode:
+        if Config.debug_mode:
             self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip_id)
         score = self.eval_model(video, audio, track.scene.fps)
         return score
