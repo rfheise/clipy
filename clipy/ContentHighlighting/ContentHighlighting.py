@@ -1,10 +1,23 @@
 from ..Utilities import Logger
 from ..Utilities import detect_scenes, Timestamp,TimeStamps
 
+"""
+ContentHighlighting.py
+
+This module highlights the most interesting moments in a video.
+This module servers as an abstract class for the Content Highlighting section of the pipeline.
+The module contains several utility functions that can help inherited implementations. 
+
+Usage Example:
+    highlighter =  ContentHighlighter(video_path)
+    intervals = highlighter.highlight_intervals()
+"""
+
 class ContentHighlighting():
 
     def __init__(self, video_file, approx_length=45, cache=None,
                     min_duration=30, max_duration=60):
+
         self.video_file = video_file
         self.approx_length = approx_length
         self.cache = cache
@@ -12,11 +25,23 @@ class ContentHighlighting():
         self.max_duration = max_duration
 
     def highlight_intervals(self):
-        #TODO
-        #highlights the most interesting moments in the video
+        """
+        This method should be implemented in the inherited class.
+        It returns the most interesting timestamps in the video.
+
+        (Timestamps):list of timestamps that will be turned into video clips
+        """
         pass
 
     def adjust_timestamps_to_scenes(self, timestamps):
+        """Takes timestamps and adjusts them so that matchup with cuts in the video. 
+
+        Args:
+            timestamps (TimeStamps): list of input timestamps to be adjusted
+
+        Returns:
+            TimeStamps: Adjusted video timestamps
+        """
 
         scenes = detect_scenes(self.video_file, cache=self.cache)
         scenes = TimeStamps([Timestamp(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scenes])
@@ -30,7 +55,15 @@ class ContentHighlighting():
         return ts
     
     def adjust_timestamp_to_scenes(self, scenes, timestamp):
-        
+        """Adjusts a single timestamp to the closest scenes in the video.
+
+        Args:
+            scenes (scenedetect scene object): list of scenes in the video
+            timestamp (Timestamp): timestamp to be adjusted
+
+        Returns:
+            Timestamp: adjusted timestamp
+        """
         new_stamp = Timestamp(timestamp.start,timestamp.end)
         for scene in scenes:
             if scene.start <= timestamp.start and scene.end >= timestamp.start:
