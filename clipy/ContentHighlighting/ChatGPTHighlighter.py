@@ -6,6 +6,13 @@ from ..Utilities import Timestamp, TimeStamps, OpenAIWhisper, Profiler
 from scenedetect import detect, ContentDetector
 import math
 
+"""This module highlights the most interesting moments in a video using ChatGPT.
+It converts the subtitles into a format that ChatGPT can understand and then uses ChatGPT to highlight the most interesting moments in the video.
+It takes the direct output from chatgpt and converts it into a list of timestamps.
+
+TLDR;
+Input Video -> Subtitle Generator -> ChatGPT -> Formatted Clip Timestamps
+"""
 class ChatGPTHighlighter(SubtitleHighlighter):
 
     def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache, sub_model="tiny", num_clips=None):
@@ -68,7 +75,10 @@ class ChatGPTHighlighter(SubtitleHighlighter):
     """
 
     def highlight_subtitles(self):
-
+        
+        # in order for these default values to be initialized the subtitles
+        # have to be generated first
+        # that is why they are initialized here
         if self.num_clips is None:
             dur = self.sub_gen.subtitles[-1].timestamp.end
             #generate a clip for every 5 minutes of video
@@ -77,22 +87,41 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         if self.sys_prompt is None:
             self.sys_prompt = self.default_sys_prompt
 
+        #chatgpt outputs json so it loads it into a python dict
         output_json = json.loads(self.call_api())
+
+        #processes output json
         subtitle_list = self.get_list_from_json(output_json["moments"])
+
         return subtitle_list
     
     def get_list_from_json(self, moments):
+        """
+        Takes the json output from chatgpt and converts it into a list of timestamps
 
+        Args:
+            moments (see self.output_format): timestamps chatgpt thinks are good clips
+
+        Returns:
+            TimeStamps: processed timestamps of video clips
+        """
         timestamps = []
         titles = []
+
+        # sorts moments by "virality" score
         moments.sort(key=lambda x: x["score"], reverse=True)
+
         for moment in moments:
+            
+            #get start and end timestamps
+            # if chatgpt did it right they should correspond to video seconds
             start = int(moment["start"])
             end = int(moment["end"]) + 1
+
             if end <= start:
                 Logger.log_warning("Start time is greater than end time in gpt query. Skipping")
                 continue
-            # if start/end in middle of dialogue wait until the end
+
             for subtitle in self.sub_gen.subtitles:
                 # if start/end in middle of dialogue wait until the end
                 if start >= subtitle.timestamp.start and start <= subtitle.timestamp.end:
@@ -101,16 +130,24 @@ class ChatGPTHighlighter(SubtitleHighlighter):
                     end = subtitle.timestamp.end
             timestamps.append((start,end))
 
-        
         return TimeStamps.from_nums(timestamps)
 
 
     def call_api(self):
+
+        """Formats the chatgpt api call and sends subtitles to chatgpt
+
+        Returns:
+            raw json: raw json output from chatgpt
+        """
+
         Profiler.start("gpt")
+
         if self.cache.exists("chatgpt"):
             return self.cache.get_item("chatgpt")
         
         Logger.log("Calling ChatGPT To Highlight Interesting Moments")
+
         response = self.client.responses.create(
             model=self.model,
             input=self.get_model_input(),
@@ -118,13 +155,18 @@ class ChatGPTHighlighter(SubtitleHighlighter):
             text=self.output_format
             
         )
+
         Logger.debug(response.output)
 
         self.cache.set_item("chatgpt", response.output_text, "dev")
         Profiler.stop("gpt")
+
         return response.output_text
 
     def get_model_input(self):
+
+        #Formats the input for chatgpt
+
         model_input = [
             {
             "role": "system",
@@ -149,6 +191,8 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         return model_input
     
 if __name__ == "__main__":
+    
+    #used for debugging highlighter
     video_file = "./videos/films/red_river.mp4"
     cache_file = "./.cache/tmp.sav"
     cache = Cache(dev=True)

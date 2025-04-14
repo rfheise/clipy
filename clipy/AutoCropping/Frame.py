@@ -1,19 +1,11 @@
 from ..Utilities import Timestamp 
 
-
-class Framestamp(Timestamp):
-
-    def __init__(self, start, end, fps):
-
-        super().__init__(start, end)
-        self.start_frame = Framestamp.frame_from_fps(start, fps)
-        self.end_frame = Framestamp.frame_from_fps(end, fps)
-    
-    @staticmethod
-    def frame_from_fps(t, fps):
-        #TODO convert time in seconds to frame index
-        pass
-
+"""
+Should be called ObjectFrame but didn't want to go back and update it everywhere. 
+This module represents a default object frame.
+It stores the metadata of an object frame in a video track. 
+See Clip.py for more information on data hierarchy.
+"""
 class Frame():
 
 
@@ -27,17 +19,11 @@ class Frame():
 
     @classmethod
     def init_from_cv2_frame(cls, frame, frame_idx):
-
+        # initializes a frame from a raw cv2 frame
+        # frame idx is the position of the frame in the full video file
         height, width =  frame.shape[:2]
         center = (width//2, height//2)
         return cls(frame_idx, center, width, height)
-
-    def crop_frame(self, crop_algo):
-
-        #TODO
-        #crop frame using generic process
-        #possibly override for various types of frames
-        pass
 
     def set_cv2(self, cv2_img):
 
@@ -45,4 +31,6 @@ class Frame():
         self.cv2 = cv2_img
     
     def clear_cv2(self):
+
+        #removes cv2 image from memory
         self.set_cv2(None)

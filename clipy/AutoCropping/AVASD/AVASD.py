@@ -15,116 +15,200 @@ import random
 
 torch.set_num_threads(8)
 
+"""
+    Uses TalkNet for automatically cropping the videos. Takes in the input Clip and processes the location of the active speaker. 
+    This is probably the most scuffed logic in the entire codebase. 
+    Most if this file is just rewriting the preprocessing steps from the original TalkNet codebase because it was ✨ Hot Garbage ✨. No offense to the original TalkNet author but it looked like he sped through the code to get results as fast as possible. 
+    Even though I'm a little harsh on his codebase I really appreciate his research work because TalkNet yields really really good results for AVASD and basically every paper since then on this task has reused his work.
+    First the input video is converted to run at 25fps and 16khz audio. This is because the default trained TalkNet model only supports this kind of input. 
+    I honestly think you could retrain the model with various audio sampling rates and paddding for the frames but then I would have to put in actual work to re-train the model. 
+    Maybe I'll do that in the future but for now this works. 
+    Then I loop through all of the frames in the clip and get a list of all the detected faces in each frame. 
+    Then I loop through all of the detected faces and generate a facial track across every video cut that contains that face. 
+    To determine if a face is in a facial track it just uses some basic logic to detect if the iou of the facial bounding box between other faces in the track is above a threshold. 
+    It then takes all facial tracks & their corresponding audio and scores them using the TalkNet model. 
+    It stores this information inside of each facial track and this data is later used when rendering the output video.
+
+    If you're curious about how talknet scores the facial tracks try running in debug mode and it will save a video of the bounding boxes to ./debug
+
+    TLDR; 
+    Input Video -> Reformats video to run at 25fps & 16000hz -> Detects Faces -> Generates Facial Tracks -> Scores Facial Tracks -> Saves Scores For Rendering
+
+"""
+
 class AVASD(AutoCropper):
 
     def __init__(self, video_path, clips, face_detection_model=S3FD,avasd_model=TalkNet, cache=GhostCache()):
         
         super().__init__(video_path, clips, cache=cache)
+
+        # face detection model (s3fd)
         self.fdm = face_detection_model(device=Config.device)
+
         #number of failed detections before face is rejected
         self.num_failed_det = Config.args.num_failed_det
+
+        # min frames in facial track
         self.min_frames_in_track = Config.args.min_frames_in_track
+
+        # avasd model (talknet)
         self.avasd_model = avasd_model(Config.device)
     
     def detect_tracks_in_scenes(self, clip):
         
+        # prints timestamp of clip for debugging
         Logger.debug(str(clip.get_timestamp()))
-        self.cache.clear(f"clip-{clip.id}-scenes")
+
+        # if clip is cached don't process it again
         if self.cache.get_item(f"clip-{clip.id}-scenes") is not None:
+
             scenes = self.cache.get_item(f"clip-{clip.id}-scenes")
             clip.set_scenes(scenes)
             Logger.debug(f"Loading Clip {clip.id} from cache")
             return
+        
+        #start profilers for debugging
+        #facial detection & facial track generation
         Profiler.start("facial detection")
         self.generate_facial_tracks(clip)
         Profiler.stop("facial detection")
+
+        #calls avasd model for scoring
         Profiler.start("speaker detection")
         self.score_tracks(clip.get_scenes(), clip.id)
         Profiler.stop("speaker detection")
+
+        # if debug mode is enabled it saves bounding boxes
         if Config.debug_mode:
             Logger.debug(f"Saving Bounding Boxes For Clip")
             os.makedirs("./debug/bboxes", exist_ok=True)
             self.draw_bbox_around_scene( f"./debug/bboxes/bboxes-{clip.id}.mp4", clip.get_scenes())
+        
+        # frees up memory
+        # by deleting the frames in the scene
+        # otherwise it will keep every frame from every clip in memory and probably get killed
+        # tbh this whole scene.load()/free() paradigm is a little scuffed
         for scene in clip.get_scenes():
             scene.free_frames_from_tracks()
+        
+        #cache rendered clip if in debug/dev mode
         self.cache.set_item(f"clip-{clip.id}-scenes", clip.get_scenes(), level="dev")
         
 
     def draw_bbox_around_scene(self, fname, scenes):
+
         #was really really tired so started to get sloppy around this point
         #definitely needs re-done
+        #edit from future Ryan: ehhh it works and isn't reused so it's probably fine
         for scene in scenes:
             scene.free_frames_from_tracks()
+
+        # loops through all the frames in the scene and draws a bounding box around the face
         for scene in scenes:
             for track in scene:
+                # scuffed loading/unloading paradigm
+                # loads frames if they are not already loaded and draws bbox
+                # I do it this way so that it works even for multiple facial tracks in a scene
                 track.load_frames(mode="render")
                 for frame in track.frames:
                     if type(frame) == Face:
+                        # if face detected sets color to green otherwise red
                         color = (0,0,255)
                         if frame.get_score() > 0:
                             color = (0,255,0)
-                        # cv2.putText(frame.cv2, str(frame.get_score()), (int(frame.bbox[0]), int(frame.bbox[1])), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color,1)
                         frame.draw_bbox(color=color)
         
+        # puts all frames in one list
         frames = []
         for scene in scenes:
             frames.extend(scene.get_frames(mode="render"))
+        
+        # writes the frames to a video file
         Helper.write_video(frames, "./.cache/scene.tmp.mp4",fps=scene.fps)
         new_video=mp.VideoFileClip("./.cache/scene.tmp.mp4")
+        # loads audio from og clip
         video = mp.VideoFileClip(self.video_file)
         audio = video.audio.subclip(scenes[0].start, scenes[-1].end)
         new_video.audio = audio
+        
+        #combines audio and video
         new_video.write_videofile(fname, codec="libx264", audio_codec="aac", logger=None)
+        
+        #removes tmp file and frames from memory
+        os.remove("./.cache/scene.tmp.mp4")
         for scene in scenes:
             scene.free_frames_from_tracks()
-        os.remove("./.cache/scene.tmp.mp4")
+        
         
         
 
     def score_tracks(self, scenes, clip_id=0):
+
         Logger.log("Detecting Speakers In Tracks")
 
         total = 0
         for scene in scenes:
             total += len(scene.tracks)
+
+        # prints this here so it doesn't print for every single track
         Logger.debug("Saving Tracks For Faces")
         pbar = tqdm(total=total)
+
+        # loops through all the tracks in the clip and scores them
         for tracks in scenes:
             for track in tracks:
+                
+                # only scores facial track
                 if type(track) is FacialTrack:
                     score = self.get_score(track, clip_id)
                     for i,frame in enumerate(track.frames):
+                        # smoothing for frame score
                         s = score[max(i - 2, 0):min(i + 3, len(track.frames))]
                         frame.set_score(s.mean())
+
                 pbar.update(1)
 
     def generate_facial_tracks(self, clip):
         
         Logger.log("Generating Facial Tracks")
+
+        # loads video shot cuts from clip
         scenes = clip.get_scenes()
+
+        # detects faces across frames
         scene_faces = self.detect_faces(scenes)
+
+       # count of current frame
         count = 0
+
         for scene in scenes:
             facial_tracks = []
             for i in range(scene.frame_duration):
+                # frame idx in video file
                 frame_idx = i + scene.frame_start
 
+                #makes sure frame idx matches up with face index
                 if count + scenes[0].frame_start != frame_idx:
                     Logger.log_error("frame index mismatch")
                     exit(45)
 
-                # faces = self.detect_faces(frame, frame_idx)
+                #faces in current frame
                 faces = scene_faces[count]
+
                 count += 1
+
+                #loops across faces and adds them to the facial tracks
                 for face in faces:
-                    setinel = False
-                    # if facial track exists add it
+                    sentinel = False
+
                     for track in facial_tracks:
                         if track.contains_face(face):
                             track.add(face)
-                            setinel = True
+                            sentinel = True
                             break 
-                    if setinel:
+
+                    # if face added to track loop onto next face
+                    if sentinel:
                         continue
                     
                     # otherwise create new track
@@ -132,14 +216,11 @@ class AVASD(AutoCropper):
                     facial_tracks[-1].add(face)
                     
                 # keep track only if it meets detection threshold
+                # determines number failed detections by comparing last face idx to current idx
                 facial_tracks = [track for track in facial_tracks if abs(frame_idx - facial_tracks[-1].last_idx) < self.num_failed_det]
+            
             # keep only tracks that meet min frame req
             facial_tracks = [track for track in facial_tracks if len(track) >= self.min_frames_in_track]
-            
-            #after tracks are processed interp
-            #the bboxes to remove gaps between frames
-            # for track in facial_tracks:
-            #     track.interp_frames()
             
             if len(facial_tracks) == 0:
 
@@ -147,21 +228,29 @@ class AVASD(AutoCropper):
 
             scene.set_tracks(facial_tracks)
             scene.free_frames()
+
         return scenes
 
     def detect_faces(self, scenes):
         
+        #gets all bboxes across all frames
         bboxes = self.fdm.detect_faces(scenes,scales = [Config.args.scale_s3fd],
                                         conf_th=Config.args.conf_th_s3fd,
                                         min_face_percentage=Config.args.min_face_percentage)
         scene_faces = []
+        # gets starting frame idx
         curr_frame = scenes[0].frame_start
+
+        # loads all raw cv2 frames
         frames = [frame for scene in scenes for frame in scene.get_frames()]
+
+        #loop through all faces detected in each frame
         for frame_bbox in bboxes:
             faces = []
+
             for i in range(frame_bbox.shape[0]):
-                #possibly cache cv2 frame in face 
-                #I guess depends on speed savings as you wouldn't hit disk
+                
+                #create a face using the raw frame, bbox, and conf values
                 bbox = frame_bbox[i]
                 face = Face.init_from_cv2_frame(frames[curr_frame - scenes[0].frame_start], curr_frame)
                 face.set_face_detection_args(bbox[:-1], bbox[-1])
@@ -170,20 +259,30 @@ class AVASD(AutoCropper):
             
             scene_faces.append(faces)
             curr_frame += 1
+        
+        #free frames from disk
         for scene in scenes:
             scene.free_frames()
+
         return scene_faces
     
 
     def get_score(self, track, clip_id):
+        
+        # gets score of facial track from avasd model
         return self.avasd_model.get_score(track, clip_id)
     
     def crop(self):
         
+        # Since talknet requires the video to be 25fps & 16000HZ
+        # preprocess the input video before clips are generated to meet this requirement
         if not Config.args.no_preprocess_video:
+            # have to clear scenes from cache as frames will no longer line up
             self.cache.clear("scenes")
             # TODO remove this and make TalkNet work with variable fps & audio sample rates
             self.video_file = Helper.preprocess_video(self.video_file)
+
+        # call parent crop method to generate clips
         return super().crop()
             
 

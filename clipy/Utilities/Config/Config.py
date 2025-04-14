@@ -24,7 +24,7 @@ class Config():
         parser.add_argument('-i', '--input', type=str,required=True, help='Input video path')
         parser.add_argument('-o', '--output', type=str,required=True, help='Output directory')
         parser.add_argument('--subtitle-model', type=str, default="turbo", help='Subtitle model to use')
-        parser.add_argument('--gpt-highlighting-model', type=str, default="gpt-4o", help='GPT model to use for highlighting')
+        parser.add_argument('--gpt-highlighting-model', type=str, default="o3-mini", help='GPT model to use for highlighting')
         parser.add_argument('--scale-s3fd', type=float, default=0.25, help='Scale factor for resizing SF3D Input') 
         parser.add_argument('--min-face-percentage', type=float, default=2, help='Minimum face percentage for detection')
         parser.add_argument('--cache-level', type=str, default="basic", help='Cache level to use')  

@@ -5,7 +5,7 @@ from ..Utilities import GhostCache, Logger, Profiler
 """
 SubtitleHighlighter.py
 
-This module servers as an abstract class for ContentHighlighters that rely on subtititles alone.
+This module servers as an abstract class for ContentHighlighters that rely on subtitles alone.
 The module contains several utility functions that can help inherited implementations. 
 
 """
@@ -27,24 +27,39 @@ class SubtitleHighlighter(ContentHighlighting):
         
         if self.cache.exists("highlight"):
             return self.cache.get_item("highlight")
+        
+
         Profiler.start("subtitle highlighting")
         Profiler.start("subtitle generation")
+
         if self.cache.exists("subtitles"):
             self.sub_gen =  self.cache.get_item("subtitles")
         else:
             self.sub_gen.generate_subtitles()
             self.cache.set_item("subtitles", self.sub_gen, "basic")
+
         Profiler.stop("subtitle generation")
+
         timestamps = self.highlight_subtitles()
+        # ensures that subtitles align with video cuts
         timestamps = self.adjust_timestamps_to_scenes(timestamps)
-        # Logger.debug(timestamps)
+
         self.cache.set_item("highlight", timestamps, "dev")
+
         Profiler.stop("subtitle highlighting")
+
         return timestamps
 
     def highlight_subtitles(self, subtitles):
-        # TODO
-        # highlight subtitles
+        """This method should be implemented in the inherited class.
+        It returns the most interesting timestamps in the video using just the subtitles.
+
+        Args:
+            subtitles (Subtitle[]): list of subtitles
+
+        Returns:
+            Timestamps: list of timestamps that will be turned into video clips
+        """
         pass
 
 

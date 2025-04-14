@@ -99,6 +99,11 @@ This is the second step in the pipeline. It takes in the input video & timestamp
 
 ### AVASD (Audio Visual Active Speaker Detection)
 
+### TalkNet Active Speaker Detection Demo
+
+[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video1.jpg)](https://www.youtube.com/watch?v=r59jHQHsje8)
+
+
 The input video has to be 25fps constant frame rate and the audio has to be sampled at 16000hz to work with TalkNet. Making this work with any kind of video file is in the to do list. I want to try to get TalkNet to work with any kind of input video using padding but that would require re-training talknet. This step could also be removed by only re-rendering the input for TalkNet but that seems like a grift and would take work.
 
 *re-renders input video to be 25fps & 16KHZ
