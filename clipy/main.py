@@ -33,7 +33,7 @@ def main():
 
 
     # Highlighting the subtitles
-    highlighter = ChatGPTHighlighter(video_path,model=Config.args.gpt_highlighting_model, cache=cache, sub_model=Config.args.subtitle_model)
+    highlighter = ChatGPTHighlighter(video_path,model=Config.args.gpt_highlighting_model, cache=cache, sub_model=Config.args.subtitle_model, num_clips=Config.args.num_clips)
     intervals = highlighter.highlight_intervals()
     cache.save(cache_file)
 

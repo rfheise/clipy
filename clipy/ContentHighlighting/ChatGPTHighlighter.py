@@ -4,6 +4,7 @@ import json
 from ..Utilities import Logger, GhostCache, Cache
 from ..Utilities import Timestamp, TimeStamps, OpenAIWhisper, Profiler
 from scenedetect import detect, ContentDetector
+import math
 
 class ChatGPTHighlighter(SubtitleHighlighter):
 
@@ -71,7 +72,7 @@ class ChatGPTHighlighter(SubtitleHighlighter):
         if self.num_clips is None:
             dur = self.sub_gen.subtitles[-1].timestamp.end
             #generate a clip for every 5 minutes of video
-            self.num_clips = int(dur / (5 * 60))
+            self.num_clips = int(math.ceil(dur / (5 * 60)))
 
         if self.sys_prompt is None:
             self.sys_prompt = self.default_sys_prompt

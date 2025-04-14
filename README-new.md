@@ -7,10 +7,9 @@ Clipy takes long form content and produces several short form video clips
 
 ## Demo 
 
-Demo Video
-[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video2.jpg)](https://www.youtube.com/watch?v=y4C2XMpcZLY)
+[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video3.jpg)](https://www.youtube.com/watch?v=nlpSfOkrqXM)
 
-For More Demos
+[More Demos](https://www.youtube.com/channel/UCX7QM2FDjp6vTTGdy27wv4Q)
 
 
 # TalkNet Active Speaker Detection Demo
@@ -48,14 +47,22 @@ pip install -r requirements.txt
 
 ```
 export OPENAI_API_KEY=<insert api key>
-python -m clipy.main <optional arguments> <input file> <output directory>
+python -m clipy.main <optional arguments> -i <input file> -o <output directory>
 ```
 
 
 
 ## Additional Arguments
 
-TODO make it easy to tweak model params with arguments
+
+| Flag | Description | Default Value |
+| :----------- | :------------: | ------------: |
+| --device <device>     | Torch Device For Running Models        | cuda if cuda is detected else cpu      |
+| --gpt-highlighting-model <model>      | gpt model to use for content highlighting         | gpt-4o        |
+| --subtitle-model <model>     | subtitle model for generating subtitles (using tiny.en significantly reduces the runtime on cpu but diminishes the quality)       | turbo        |
+| --num-clips <number> | number of clips to output | ceiling(runtime/5) |
+| --debug-mode | runs in debug mode (debug mode runs significantly faster and caches everything but produces very poor quality output) | N/A |
+| -h | shows additional configuration options | N/A |
 
 ## Information about running
 

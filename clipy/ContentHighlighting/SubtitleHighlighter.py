@@ -2,11 +2,22 @@ from .ContentHighlighting import ContentHighlighting
 from ..Utilities.SubtitleGenerator import OpenAIWhisper
 from ..Utilities import GhostCache, Logger, Profiler
 
+"""
+SubtitleHighlighter.py
+
+This module servers as an abstract class for ContentHighlighters that rely on subtititles alone.
+The module contains several utility functions that can help inherited implementations. 
+
+"""
 
 class SubtitleHighlighter(ContentHighlighting):
 
     def __init__(self, video_file,approx_length=45, sub_gen = None, cache=GhostCache()):
         super().__init__(video_file,approx_length)
+
+        #subgen is the subtitle generator
+        #default is open ai whisper
+        
         self.sub_gen = sub_gen
         if self.sub_gen is None:
             self.sub_gen = OpenAIWhisper(self.video_file, model_name="tiny.en")

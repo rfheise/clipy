@@ -35,6 +35,7 @@ class Config():
         parser.add_argument('--cache-dir', type=str, default="./.cache", help='Directory to store cache files')
         parser.add_argument('--cache-file', type=str, default=None, help='Cache file name')
         parser.add_argument('--conf-th-s3fd', type=float, default=0.5, help='Confidence threshold for face detection')
+        parser.add_argument('--num-clips', type=int, default=None, help='Number of clips to output')
         parser.add_argument('--load-cache-file', type=str, default=None, help='Cache file to load')
         parser.add_argument('--no-preprocess-video', default=False, action='store_true', help='Do not preprocess video before running clipy')
         args = parser.parse_args()
