@@ -11,6 +11,8 @@ def main():
     Config.init()
     Logger.init()
 
+        
+    os.makedirs(".cache",exist_ok=True)
     #gets in file & outdir from input args
     fname = Config.args.input
     out_dir = Config.args.output
