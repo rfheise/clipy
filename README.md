@@ -48,7 +48,7 @@ python -m clipy.main <optional arguments> -i <input file> -o <output directory>
 | :----------- | :------------: | ------------: |
 | --device <device>     | Torch Device For Running Models        | cuda if cuda is detected else cpu      |
 | --gpt-highlighting-model <model>      | gpt model to use for content highlighting         | o3-mini        |
-| --subtitle-model <model>     | subtitle model for generating subtitles (using tiny.en significantly reduces the runtime on cpu but diminishes the quality)       | turbo        |
+| --subtitle-model <model>     | subtitle model for generating subtitles (see [openai whisper](https://github.com/openai/whisper) for more info)       | turbo        |
 | --num-clips <number> | number of clips to output | ceiling(runtime/5) |
 | --debug-mode | runs in debug mode (debug mode runs significantly faster and caches everything but produces very poor quality output) | N/A |
 | -h | shows additional configuration options | N/A |
