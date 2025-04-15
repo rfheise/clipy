@@ -6,10 +6,10 @@ from .Scene import Scene
 """
 AutoCropper.py
 
-This module generates the Clip object for each clip and loads it's cropping metadata
+This module generates the Clip object for each short and loads it's cropping metadata
 This metadata is then use to actually crop the clip during the video processing stage of the pipeline.
 This module servers as an abstract class for the Auto Cropping section of the pipeline.
-The module contains several utility functions that can help inherited implementations. 
+It contains several utility functions that can help inherited implementations. 
 
 This is probably the most scuffed logic in the code and needs reworked.
 

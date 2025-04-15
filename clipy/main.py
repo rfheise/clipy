@@ -7,26 +7,31 @@ import os
 
 def main():
 
-    
+    #initializes the logger and processes input args
     Config.init()
     Logger.init()
 
+    #gets in file & outdir from input args
     fname = Config.args.input
     out_dir = Config.args.output
-    # platform = sys.argv[3]
 
     Profiler.start()
 
     video_path = fname
     
+    # initializes cache
     cache = Cache(level=Config.args.cache_level)
     cache_file = None
+
+    #set cache file to save to if specified 
+    #otherwise just use cache in memory
     if Config.args.cache_file is not None:
         os.makedirs(Config.args.cache_dir, exist_ok=True)
         cache_file = os.path.join(Config.args.cache_dir, Config.args.cache_file)
-        
     cache.set_save_file(cache_file)
 
+    # load cache from disk if specified
+    # mainly used in debugging/developing
     if Config.args.load_cache_file is not None:
         os.path.join(Config.args.cache_dir, Config.args.load_cache_file)
         cache.load(Config.args.load_cache_file)
@@ -38,7 +43,6 @@ def main():
     cache.save(cache_file)
 
     # Cropping the video
-    cache.clear("videos")
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
     cache.save(cache_file)
@@ -48,15 +52,21 @@ def main():
 
     
     if not Config.debug_mode:
-        pass
+        #TODO remove this section entirely
+        #needs to be merged into render 
+        #also make size an input arg
+
         #resize the output video
         creator.add_pizzazz(ResizeCreator(new_size=(1080,1920),cache=cache))
 
+    #add Subtitle Writer to pizzazz
     creator.add_pizzazz(SubtitleCreator(cache=cache))
+
+    #render the output clips
     creator.render(output_dir=out_dir)
 
     Profiler.stop()
     
 
-if __name__ == "__main__":
+if __name__ == "__main__":#
     main()

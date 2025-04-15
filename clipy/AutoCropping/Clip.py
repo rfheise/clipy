@@ -20,6 +20,9 @@ Clip
             |-- Frames
                 | (Object) Frame stores information about an object in a particular frame
 
+clip length = sum(scene lengths)
+scene length != sum(track lengths)
+
 This hierarchy is important to understand because it is how the clip object is structured.
 Its a little scuffed and changed a few times throughout the implementation but I've settled on this structure as it seems logical. 
 You can tell how things used to work as some implementations don't make sense and were band-aid solutions to get things working.

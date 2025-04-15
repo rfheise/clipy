@@ -4,6 +4,8 @@ import os
 from ..Logging.Logger import Logger
 from ..Profiler.Profiler import Profiler
 
+#this file just preprocesses the input video file with ffmpeg 
+#it preprocesses it to the 25fps 16000HZ that talknet requires
 
 def preprocess_video(video_file):
     out_file = os.path.splitext(os.path.basename(video_file))[0] + "_preprocessed.mp4"

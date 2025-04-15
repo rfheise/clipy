@@ -2,6 +2,12 @@ import requests
 import math 
 from tqdm import tqdm 
 
+#this file is used to download various files used by this script
+#right now only the model weights are hosted at the link below 
+#they are all hosted on my personal cloudflare account and can be downloaded really fast 
+#I think they are 150MB in total and get downloaded when they are needed by the pipeline
+#🎉 zero egress fees on cloudflare
+
 cf_link = "https://files.quettacompute.com/"
 
 def download_cf(remote_name, local_name):

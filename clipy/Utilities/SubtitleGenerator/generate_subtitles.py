@@ -3,6 +3,15 @@ import os
 import sys
 import time 
 
+"""
+
+Ignore this file. All it does is generate subtitles recursively for a directory full of video files. 
+I used this for my jellyfin server and decided to keep it in the repo in case anyone else wants to use it to
+generate a bunch of srts for video files.
+This file doesn't serve a purpose in the overall project though.
+
+"""
+
 def generate_subtitles(in_dir, out_dir, model="turbo"):
 
     # get all files and make new directories 

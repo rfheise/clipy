@@ -1,5 +1,11 @@
 from enum import Enum
 
+"""
+This file just specifies various colors and sorts them into various groups.
+ChatGPT was really helpful for grabbing all the color values.
+I literally just told it to generate a class that gets all the colors in a standard 24pk crayon box and stores them in (R,G,B) format.
+"""
+
 class Color(Enum):
     #crayon colors
     RED             = (255, 0, 0)

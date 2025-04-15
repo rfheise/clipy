@@ -1,6 +1,18 @@
-#TODO implement a professional config file that gets loaded in main 
+
 import torch 
 import argparse
+
+
+"""
+TODO implement a professional config file that gets loaded in main 
+
+Config.py 
+
+This module specifies all of the default parameters that can be configured by the user when running the program.
+It also parses all of the arguments passed in by the user and saves them to the global config object.
+The global config object is then used by pretty much everything to load the default config values.
+
+"""
 
 class Config():
 
@@ -8,15 +20,22 @@ class Config():
     
     def init(debug=False):
 
+        #initializes all the arguments specified by the user
         Config.args = Config.init_args()
         Config.debug_mode = Config.args.debug_mode
         if Config.debug_mode:
             Config.init_debug()
+        
+        #sets device to be used by torch models
         Config.device = Config.args.device
+
+        #sets whether or not the profiler should be used to time the pipeline
         Config.use_profiler = Config.args.use_profiler
     
     def init_args():
 
+        #wall of arguments that specify what each one does
+        
         default_device = "cuda" if torch.cuda.is_available() else "cpu"
 
         parser = argparse.ArgumentParser(description = "Clipy: A video processing tool")
@@ -43,6 +62,7 @@ class Config():
         
     def init_debug():
 
+        #debug mode is just a shorthand for specifying several arguments
         Config.args.debug_mode = True
         Config.args.load_cache_file = 'fd_test.sav'
         Config.args.gpt_highlighting_model = "gpt-4o-mini"

@@ -13,6 +13,7 @@ It takes the direct output from chatgpt and converts it into a list of timestamp
 TLDR;
 Input Video -> Subtitle Generator -> ChatGPT -> Formatted Clip Timestamps
 """
+
 class ChatGPTHighlighter(SubtitleHighlighter):
 
     def __init__(self, video_file,approx_length=45, model="gpt-4o-mini", sys_prompt=None, cache=GhostCache, sub_model="tiny", num_clips=None):

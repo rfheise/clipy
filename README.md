@@ -1,88 +1,83 @@
 # Clipy: Shortform Hyper Intelligent Trimming
+Clipy converts long form content into BRAINROT
 
-# Requirements 
+# Overview
+
+Clipy takes long form content and produces several short form video clips
+
+## Demo 
+
+[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video3.jpg)](https://www.youtube.com/watch?v=nlpSfOkrqXM)
+
+[More Demos](https://www.youtube.com/channel/UCX7QM2FDjp6vTTGdy27wv4Q)
+
+
+
+# Installation 
+
+## Requirements
+
 ```
-ffmpeg 
+ffmpeg (for rendering the video)
+openai api key (content highlighting) ~ uses $0.035/hr of video with o3-mini
 requirements in requirements.txt
 ```
-# Running The Editor
+ 
+## Installation Steps
+
 ```
-cd <clipy directory>
+git clone https://github.com/rfheise/clipy.git
+cd clipy
 pip install -r requirements.txt
-python -m clipy.main <in file> <output directory>
 ```
-Currently the input video needs to be 25fps with a 16000hz audio sample rate. Making this run with various input video types is in the todo list. 
 
-The editor will download the model weights while it is running. The weights are hosted on cloudflare and are around 100MB.
-
-Ideally you have a decent gpu to run the editor. With my 4090 it currently takes ~15 minutes to generate 10 clips from a 2 hour video. When I tested it using my m4 mac mini it took ~2 hours to similar results. I'm working on optimizing the gpu speeds but I honestly don't think cpu rendering speeds will improve much. 
-
-# Outline
-I intent to create a modular pipeline that lets me plug and play with various algorithms for the various components. Below I will outline the pipeline and the initial implementation. 
-
-1. Interesting Content Highlighting ✅
-    Takes in video and outputs timestamps of interesting moments in the video that would make good clips
-    * Moment Detection: Initially Implemented As ChatGPT subtitle query
-
-2. Automatic Cropping Around Most Interesting Element ✅
-    Takes in timestamps & video and outputs cropped videos around the most interesting element.
-    * Video Highlighting Detector: Initially implemented as TalkNet that identifies the speaker it will yield the cordinates of the detected face
-    * Video cropping: crops videos around cordinates probably using opencv or something
-## TalkNet - Audio Visual Active Speaker Detection
-
-[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video1.jpg)](https://www.youtube.com/watch?v=r59jHQHsje8)
+## Usage 
 
 
-3. Pizzazz ✅
-    Takes in cropped videos and add subtitles, music, etc...
-    * Pizzazz: generic module that takes in cropped video and adds pizzazz 
-        * initially just adding subtitles
-## Demo Output
+```
+export OPENAI_API_KEY=<insert api key>
+python -m clipy.main <optional arguments> -i <input file> -o <output directory>
+```
 
-[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video2.jpg)](https://www.youtube.com/watch?v=y4C2XMpcZLY)
 
-4. Upload
-    Automatically uploads content to video platform if it passes quality check and uploads it to platform. 
-    * I intend to automate this part but it will initially be performed manually 
 
-# TODO
+## Additional Arguments
 
-- [X] Finish Prototype implementation
-- [ ] Optimize Code
-    - [ ] Use torch data loaders for batched inference - S3FD and Talknet
-        - [X] S3FD
-        - [ ] TalkNet
-    - [ ] see if I can tweak model to work with variable framerate & audio sampling without re-rendering
-    - [ ] Try different subtitle presets for optimal performance
-    - [ ] try different parameters for scene-detection library
-- [ ] Clean/Comment Code
-- [ ] Remove Cosmetic Inefficiencies In Code 
-    - [ ] Make data flow top -> down rather than all over the place
-    - [ ] Review the code to make sure everything makes sense
-- [ ] Bug Fixes
-    - [X] Weird Splits in outputs
-        * Fixed using AdaptiveDetector instead of ContentDetector
-    - [ ] Weird Subtitle Outputs
-        - [ ] strange outputs from openai whisper 
-        - [ ] not sure how to fix but could slap some band-aids on it and pray they fix it
-    - [ ] Fix subtitle alignments using something like aeneas
-    - [ ] Make it so scene has several centers depending on main track in focus
-        * this will make the cropping look a lot more natural
-    - [ ] Fix debug mode bug that causes bboxes to be in BGR instead of RGB
-- [X] Tweak Video Outputs
-    - [X] Custom Fonts
-    - [X] Font Size
-    - [X] Text Position
-    - [X] Resolution
-    - [X] Shot Cutting Parameters
-    - [X] tweak gpt system prompts
-- [ ] Create As Module
-    - [ ] make sure it's usable out of the box
-    - [X] find a way to easily distribute model weights
-    - [X] Replace lame with ffmpeg call
-    - [ ] Docker Container?
+
+| Flag | Description | Default Value |
+| :----------- | :------------: | ------------: |
+| --device <device>     | Torch Device For Running Models        | cuda if cuda is detected else cpu      |
+| --gpt-highlighting-model <model>      | gpt model to use for content highlighting         | o3-mini        |
+| --subtitle-model <model>     | subtitle model for generating subtitles (using tiny.en significantly reduces the runtime on cpu but diminishes the quality)       | turbo        |
+| --num-clips <number> | number of clips to output | ceiling(runtime/5) |
+| --debug-mode | runs in debug mode (debug mode runs significantly faster and caches everything but produces very poor quality output) | N/A |
+| -h | shows additional configuration options | N/A |
+
+See [Config.py](clipy/Utilities/Config/Config.py) for more details
+
+## Information about running
+
+You need a gpu to run this software efficiently. Right now it takes ~10 minutes to process an hour of content using my 4090 with the turbo subtitle model. It takes ~1.5hrs to process an hour of content on my macbook using the cpu with tiny.en subtitle model. 
+
+You can also try to use gpt-o4-mini (used in debug mode) instead of o3-mini since it's a fraction of the cost. However, I've found that the results are significantly worse. You can also try any other model that you desire but I've found the best performance/cost model to be o3-mini.
+
+# Features
+* Automatically highlights the most interesting moments in a video
+    * Currently uses chatgpt to highlight the most interesting moments
+    * This feels like a grift and I plan on developing/finding a model that can run locally
+* Crops the video around the person speaking
+* Adds PIZZAZZ to the output video 
+    * Subtitles
+    * 1080 Rendering
+    * More on the way
+
+# How Does It Work/Developer Information
+See [Dev-info.md](Dev-info.md) for more details
 
 # Acknowledgements  
-The TalkNet & S3FD model weights and some preprocessing steps are modifed from this [repository](https://github.com/TaoRuijie/TalkNet-ASD)
+The TalkNet & S3FD model weights and preprocessing steps are modified from this [repository](https://github.com/TaoRuijie/TalkNet-ASD)
+
+# Contact 
+For any questions, comments, or suggestions my email is ryan@heise.ai
 
 

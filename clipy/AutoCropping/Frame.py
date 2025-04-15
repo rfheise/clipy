@@ -3,7 +3,7 @@ from ..Utilities import Timestamp
 """
 Should be called ObjectFrame but didn't want to go back and update it everywhere. 
 This module represents a default object frame.
-It stores the metadata of an object frame in a video track. 
+It stores the metadata of an object in a frame in a video track. 
 See Clip.py for more information on data hierarchy.
 """
 class Frame():

@@ -2,6 +2,11 @@ from .Pizzazz import Pizzazz
 from ..Utilities import OpenAIWhisper, GhostCache, Helper
 import random
 
+"""
+
+Adds subtitles to short
+
+"""
 class SubtitleCreator(Pizzazz):
 
     def __init__(self, subgen=None, cache = GhostCache()):
@@ -11,9 +16,12 @@ class SubtitleCreator(Pizzazz):
         
     
     def init_subgen(self, clip):
-
+        
+        #initializes the subtitle model 
+        #if the subtitles have already been generated for the entire video 
+        #earlier in the pipeline just used the cached subtitles
         if self.subgen is None:
-
+            
             if self.cache.exists("subtitles"):
                 self.subgen = self.cache.get_item("subtitles")
                 return 
@@ -23,16 +31,27 @@ class SubtitleCreator(Pizzazz):
 
     def render(self, frames, audio, clip):
 
+        #Renders subtitles on top of each video clip
+
+        # initializes subtitle generator
         self.init_subgen(clip)
+
+        #selects random bright color as subtitle color
         self.color = random.choice(Helper.bright_colors)
-        # self.color = Helper.Color.GOLDENROD.value
-        # self.color = Helper.Color.YELLOW.value
+
+        #loads subtitles
+        #will pull from cache if they are cached
         subtitles = self.subgen.get_subtitles(clip.get_timestamp())
+
+        #iterates over frames
+        #if frame is within the timestamp of a subtitle add that subtitle on top of the frame
         frame_start = clip.get_start_frame()
         fps = clip.get_scenes()[0].fps
         for i, frame in enumerate(frames):
             if self.scale is None:
-
+                
+                #I set the font size using 480p video as reference
+                #Scales font to og size
                 self.scale = frame.shape[0] / 480
 
             frame_idx = i + frame_start 
@@ -44,7 +63,8 @@ class SubtitleCreator(Pizzazz):
 
     def write(self, frame, text):
 
-        #TODO write subtitles to frame
+        # basically just a wrapper for the Helper.draw_wrapped text method
+        # could optionally make a lot of these Config options
         
         max_width = frame.shape[1] - 20 * self.scale  # Set maximum width (with a margin)
         font_path = './fonts/Roboto.ttf'

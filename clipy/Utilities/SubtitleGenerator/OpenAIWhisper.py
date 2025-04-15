@@ -14,29 +14,55 @@ from ..Config.Config import Config
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
+"""
+Implements OpenAIWhisper as a subtitle engine
+"""
+
 class OpenAIWhisper(SubtitleGenerator):
     def __init__(self, fname, model_name="turbo", no_speech_prob_threshold=0.5,
                  subtitle_interval=20,sample_rate=16000):
+        
         super().__init__(fname,subtitle_interval)
+
         self.__model = None
+        
+        #subtitle model to use: tiny.en, medium, turbo, etc...
+        #see https://github.com/openai/whisper for all models
         self.model_name = model_name
+
+        #keep threshold for detected speech
         self.no_speech_prob_threshold = no_speech_prob_threshold
+        
+        #audio segment
+        #used for caching
         self.audio_segment = None
+
+        #torch device
         self.device = Config.device
+
+        #input audio sample rate
         self.sample_rate = sample_rate
 
     @property
     def model(self):
-        # if torch.mps.is_available():
-        #     self.device = torch.device("mps")
+        
+        #lazily loads model
         if self.__model is None:
             self.__model = whisper.load_model(self.model_name, self.device)
         return self.__model
         
     def generate_subtitle_segment(self, timestamp, overlap=5):
+        #overloaded method for engine implementation
+        
+        #omg I can't believe I hard code the sample rate 
+        #this is a big no no and something
+        #TODO don't use default sample rate 
+        #make sure this is properly set by calling function
         if self.audio_segment is None:
             self.audio_segment = whisper.load_audio(self.audio_file,sr=self.sample_rate)
-            
+        
+        #adds overlap to start and end timestamps
+        #ensures audio split in between timestamps is properly captured
         start = timestamp.start - overlap 
         end = timestamp.end + overlap
         if start < 0:
@@ -44,11 +70,17 @@ class OpenAIWhisper(SubtitleGenerator):
         if end > self.duration:
             end = self.duration
 
+        #gets audio segment from audio
         clip = self.audio_segment[start *self.sample_rate: int(end*self.sample_rate)]
         transcript = self.model.transcribe(clip)
+
+        #processes subtitles from model output
         return self.process_segments(start, transcript, timestamp)
     
     def process_segments(self, start,transcript,  timestamp):
+        
+        #converts openai model output to Subtitle[] list
+
         result = [item for item in transcript["segments"] if item["no_speech_prob"] < self.no_speech_prob_threshold]
         ret = []
         #loop over result only keep non duplicate speech

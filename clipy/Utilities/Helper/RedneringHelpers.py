@@ -5,8 +5,10 @@ import subprocess
 from ..Logging.Logger import Logger
 from ..Config.Config import Config
 
-#this whole file was vibe coded with gpt 
-#lol I don't want to actually learn how to use cv2
+#this whole file was made using ChatGPT
+#I didn't actually want to learn how to use PILLOW or cv2
+#Honestly doing this myself probably would have taken hours of looking through the docs
+#I think it left pretty good descriptions about what each function does 
 
 def draw_box_on_frame(frame, center, box_size=(100, 100), color=(0, 0, 0), thickness=2):
     """

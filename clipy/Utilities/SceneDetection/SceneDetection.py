@@ -7,34 +7,34 @@ from ..Profiler.Profiler import Profiler
 import cv2
 import moviepy.editor as mp
 
+#This function just uses the scene detect library in order to 
+#identify cuts in the video file
+
 def detect_scenes(fname, threshold=10, cache=GhostCache):
-    # video = open_video(fname)
-    # scene_manager = SceneManager()
-    # scene_manager.add_detector(
-    #     ContentDetector(threshold=threshold,min_scene_len=10)
-    #     )
+
     if cache.exists("scenes"):
         scenes = cache.get_item("scenes")
         return scenes
     
     Logger.log("Detecting Scenes")
+
     Profiler.start("Scene Detection")
-    # scenes = detect(fname, ContentDetector(threshold=threshold,min_scene_len=10,
-    #                                         #    frame_window=3,
-    #                                             # min_content_val=10
-    #                                             ),show_progress=True)
+
+    #calls scene detect library function to idenfity cuts
     scenes = detect(
-    fname,
+        fname,
         AdaptiveDetector(
-            adaptive_threshold=3.0,   # How much higher the frame's score must be relative to its neighbors
-            min_scene_len=10,         # Minimum gap between scene cuts (in frames)
-            window_width=3,           # Number of neighboring frames to use for averaging (try increasing it if still jumpy)
-            min_content_val=10        # Minimum raw content change required to consider a cut
+            adaptive_threshold=3.0,
+            min_scene_len=10,
+            window_width=3,
+            min_content_val=10
         ),
         show_progress=True
     )
-    # scene_list = scene_manager.detect_scenes(video, show_progress=True)
+
+    #sorts scenes by start time
     scenes.sort(key=lambda x:x[0].get_seconds())
+
     Profiler.stop("Scene Detection")
     cache.set_item('scenes', scenes, "basic")
     return scenes

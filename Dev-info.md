@@ -43,7 +43,13 @@ I want to get to a point where each section of the pipeline has several differen
     * this will make the cropping look a lot more natural
 - [ ] Add margin to facial cropping
     * currently it will zoom in on a speakers face if they take up a majority of the frame
-- [ ] Fix debug mode bug that causes bboxes to be in BGR instead of RGB
+- [X] Fix debug mode bug that causes bboxes to be in BGR instead of RGB
+- [ ] Add resizing to rendering process this will get rid of pixelated output
+    * right now it is cropping then resizing but these results in unnecessary quality loss
+    * should resize and then crop instead of crop and then resize
+- [ ] Use audio sample rate when calling subtitle generator
+    * Currently uses 16000HZ as hardcoded sample rate
+    * fixing this might honestly fix the subtitle alignment issue
 
 ## Features
 
