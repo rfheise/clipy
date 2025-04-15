@@ -68,6 +68,7 @@ class AutoCropper():
             videos.append(clip)
             Logger.new_line()
 
+
         Profiler.stop("crop")
         # update cache with processed video clips
         self.cache.set_item("videos", videos, "dev")

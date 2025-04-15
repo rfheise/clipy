@@ -164,12 +164,6 @@ class TalkNetInference():
     
     def load_frames_for_avasd(self, track):
         
-        #frees potentially modified frames
-        #kind of hacky and can probably can be removed but whatever
-        track.free_frames()
-
-        #loads the frames from the disk as cv2 image
-        track.load_frames()
     
         raw_frames = []
         for frame in track.frames:
@@ -194,7 +188,7 @@ class TalkNetInference():
             #I have to preprocess my data in the exact same way
             cs = .4
             bsi = int(bs * (1 + 2 * cs))
-            raw = frame.cv2.get_cv2()
+            raw = frame.raw_frame.get_cv2()
             raw = np.pad(raw, ((bsi,bsi), (bsi,bsi), (0, 0)), 'constant', constant_values=(110, 110))
             my = y + bsi 
             mx = x + bsi

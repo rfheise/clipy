@@ -15,7 +15,7 @@ A scene contains a collection of object tracks and is used to load the raw frame
 class Scene():
 
     counter = 0
-    def __init__(self, video_file, start,end, frame_start, frame_end, frame_buffer = None):
+    def __init__(self, video_file, start,end, frame_start, frame_end):
         
         #start/end in seconds
         self.start = start 
@@ -54,7 +54,6 @@ class Scene():
         # right now it assumes one object per scene
         self._scene_center = (None, None)
 
-        self.frame_buffer = frame_buffer
 
     @property
     def frame_duration(self):
@@ -93,12 +92,12 @@ class Scene():
         return self._fps
 
     @classmethod
-    def init_from_pyscene(cls, fname, scene, fb):
+    def init_from_pyscene(cls, fname, scene):
 
         #initializes a scene from pyscene object
         #python scene-detection library is initially used to detect scenes (video cuts)
         return cls(fname, scene[0].get_seconds(), scene[1].get_seconds(),
-                   scene[0].get_frames(), scene[1].get_frames(),frame_buffer=fb)
+                   scene[0].get_frames(), scene[1].get_frames())
 
     def get_timestamp(self):
         return Timestamp(self.start, self.end)
@@ -113,62 +112,6 @@ class Scene():
         if timestamp.end < self.end:
             self.end = timestamp.end 
             self.frame_end = Scene.get_frame_at_timestamp(self.video_file, timestamp.end)
-    
-    def get_frames(self, start = None, end = None, mode="model"):
-        
-        #maybe the most scuffed thing about this whole project
-        #would probably make linus torvalds cry
-        #the code itself isn't "terrible" but the loading/freeing paradigm is heavily abused
-
-        # loads frames if not already loaded
-        if self.frames is None:
-            self.load_frames(mode)
-
-        #load all frames from scene if start and end frame not spcified
-        if start is None or end is None:
-            return self.frames 
-        
-        #otherwise only load specified frames
-        ret = []
-        for i,frames in enumerate(self.frames):
-            if i + self.frame_start >= start and i + self.frame_start <= end:
-                ret.append(self.frames[i])
-        return ret
-
-    def free_frames(self):
-        # frees frames from memory
-        if self.frames is not None:
-            for frame in self.frames:
-                frame.clear()
-            self.frames = None
-
-    def load_frames(self, mode = "model"):
-
-        # TODO should have global cv2 object that is managed by clip object
-        # only close when clip is done with it
-        # just change position to start of scene when loading frames
-        # would be more efficient
-
-        self.frames = []
-        #opens video with cv2 and indexes it to starting frame
-        cap = cv2.VideoCapture(self.video_file)
-        cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_start)
-
-        #loads all frames in scene
-        for i in range(self.frame_start, self.frame_end):
-            ret, frame = cap.read()
-            if not ret:
-                Logger.log_error("indexed frame not in video")
-                exit(4)
-            #if mode is model loads frames as RGB 
-            #default is BGR
-            #TODO mode should be color scheme and not use case
-            if mode == "model":
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            self.frames.append(self.frame_buffer.add_frame(i, frame))
-        
-        #close video file
-        cap.release()
     
     def get_audio(self, start=None, end=None):
 
@@ -312,9 +255,3 @@ class Scene():
             Logger.log_error("Centers Not Set")
             exit(75)
         return self.centers[0]
-
-    def free_frames_from_tracks(self):
-        #frees frames from memory
-        self.free_frames()
-        for track in self:
-            track.free_frames()

@@ -15,8 +15,8 @@ See Clip.py, Frame.py, and Track.py for more information
 
 class Face(Frame):
     
-    def __init__(self, idx, center, width, height):
-        super().__init__(idx, center, width, height)
+    def __init__(self, idx, center, width, height, raw_frame=None):
+        super().__init__(idx, center, width, height, raw_frame)
         self.bbox = None 
         self.conf = None
         self.score = None
@@ -33,23 +33,6 @@ class Face(Frame):
             Logger.log_error("score not processed")
             exit(3)
         return self.score
-    
-    def crop_cv2(self):
-
-        #crops face in frame using bounding box
-
-        if self.cv2 is None:
-            Logger.log_error("cv2 not loaded")
-            exit(2)
-        bbox = [int(i) for i in self.bbox]
-        #resizes bounding box to be within frame
-        x1 = max(bbox[0], 0)
-        x2 = min(bbox[2], self.cv2.shape[1])
-        y1 = max(bbox[1],0)
-        y2 = min(bbox[3], self.cv2.shape[0])
-        self.cv2 = self.cv2[y1:y2, x1:x2]
-
-        return self.cv2 
     
     def set_face_detection_args(self, bbox, conf):
 
@@ -126,13 +109,13 @@ class Face(Frame):
 
         #draws bboxes on loaded cv2 frame
         #used for debugging bboxes
-        if self.cv2 is None:
+        if self.raw_frame is None:
             Logger.log_error("cv2 Frames Not Loaded")   
         x = int((self.bbox[2] + self.bbox[0])/2)
         y = int((self.bbox[3] + self.bbox[1])/2)
         b_width = self.bbox[2] - self.bbox[0]
         b_height= self.bbox[3] - self.bbox[1]
-        Helper.draw_box_on_frame(self.cv2.get_cv2(), (x,y), (b_width, b_height), color=color)
+        Helper.draw_box_on_frame(self.raw_frame.get_cv2(), (x,y), (b_width, b_height), color=color)
 
 
 

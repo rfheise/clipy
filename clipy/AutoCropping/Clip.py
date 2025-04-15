@@ -35,7 +35,7 @@ class Clip():
 
     # counter for clip id
     counter = 0
-    def __init__(self, video_file, scenes, frame_buffer, cache=GhostCache()):
+    def __init__(self, video_file, scenes, buffer, cache=GhostCache()):
         
         self.cache = cache
 
@@ -60,7 +60,7 @@ class Clip():
         self.height = None
 
         #frame buffer
-        self.frame_buffer = frame_buffer
+        self.buffer = buffer
 
     def set_dims(self,frame):
         # sets dimensions of the output video before rendering
@@ -200,7 +200,7 @@ class Clip():
         clip_scenes = []
         for scene in scenes:
             # intializes scene from pyscene object
-            scene = Scene.init_from_pyscene(video_file, scene, fb)
+            scene = Scene.init_from_pyscene(video_file, scene)
 
             # double check this if statement
             # seems kind of sus ngl
@@ -214,8 +214,9 @@ class Clip():
         clip_scenes[0].trim_scene(timestamp)
         clip_scenes[-1].trim_scene(timestamp)
 
-        # return clip
-        return cls(video_file, clip_scenes, cache)
+        ret = cls(video_file, clip_scenes, buffer=fb, cache=cache)
+        ret.initialize_raw_frames()
+        return ret
     
     def get_scenes(self):
         return self.scenes
@@ -254,16 +255,11 @@ class Clip():
         self.options["aspect_ratio"] = aspect_ratio
         for scene in self.scenes:
             scene.set_centers()
+        self.flush_buffer()
 
     def set_scenes(self, scenes):
 
         self.scenes = scenes
-    
-    def free_frames(self):
-
-        # frees clip frames from memory
-        for scene in self.scenes:
-            scene.free_frames_from_tracks()
     
     def get_total_frames(self):
 
@@ -273,3 +269,56 @@ class Clip():
             # end frame is not inclusive
             total_frames += scene.frame_end - scene.frame_start
         return total_frames
+    
+    def get_raw_frame(self, idx):
+        return self.buffer.get_frame(idx)
+    
+
+    def frame_modifier(self, func):
+
+        start_frame = self.scenes[0].frame_start 
+        end_frame = self.scenes[-1].frame_end 
+
+        cap = cv2.VideoCapture(self.video_file)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        for i in range(start_frame, end_frame):
+            ret, frame = cap.read()
+
+            if not ret:
+                Logger.log_error("Error Reading Frame")
+                exit(89)
+
+            func(self, i, frame)
+
+    def reset_frames(self):
+        def func(me, i, frame):
+            raw = me.buffer.get_frame(i)
+            raw.set_cv2(frame)
+        self.frame_modifier(func)
+            
+    def initialize_raw_frames(self):
+        def func(me, i, frame):
+            me.buffer.add_frame(i, frame)
+        self.frame_modifier(func)
+        
+
+    def flush_buffer(self):
+        self.buffer.flush()
+
+
+    def get_frames(self, start=None, end=None):
+        #end frame is not inclusive
+        if start is None:
+            start = self.get_start_frame()
+        
+        if end is None:
+            end = self.get_end_frame()
+        
+        frames = []
+        for i in range(start, end):
+            frames.append(self.buffer.get_frame(i))
+        return frames
+    
+    def destroy_buffer(self):
+
+        self.buffer.clear()

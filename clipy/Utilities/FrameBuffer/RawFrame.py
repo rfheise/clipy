@@ -58,7 +58,7 @@ class FrameBuffer():
         if idx in self.buffer_ids:
             return self.buffer[idx]
         
-        self.frame.get_cv2()
+        self.frames[idx].get_cv2()
         self.add_frame_to_buffer(self.frames[idx])
         return self.frames[idx]
     
@@ -89,7 +89,11 @@ class FrameBuffer():
 
         for idx in frame_ids:
             self.remove(idx)
-        
+    
+    def flush(self):
+
+        while len(self.buffer_ids) > 0:
+            self.remove_top()
 
 
 

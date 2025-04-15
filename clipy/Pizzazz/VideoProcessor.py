@@ -61,7 +61,7 @@ class VideoProcessor:
                               frames, audio, video.get_scenes()[0].fps)
             
             #frees frames from memory
-            video.free_frames()
+            video.destroy_buffer()
             
             print(f"Processed video saved at: {outfile}")
 
