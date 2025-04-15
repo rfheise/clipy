@@ -183,7 +183,7 @@ class ChatGPTHighlighter(SubtitleHighlighter):
             "content": [
                 {
                 "type": "input_text",
-                "text": self.sub_gen.format_for_llm(".cache/.tmp_llm_out.sub")
+                "text": self.sub_gen.format_for_llm()
                 }
             ]
             },
