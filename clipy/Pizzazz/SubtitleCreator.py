@@ -32,7 +32,6 @@ class SubtitleCreator(Pizzazz):
     def render(self, frames, audio, clip):
 
         #Renders subtitles on top of each video clip
-
         # initializes subtitle generator
         self.init_subgen(clip)
 

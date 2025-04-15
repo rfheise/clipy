@@ -50,6 +50,10 @@ I want to get to a point where each section of the pipeline has several differen
 - [ ] Use audio sample rate when calling subtitle generator
     * Currently uses 16000HZ as hardcoded sample rate
     * fixing this might honestly fix the subtitle alignment issue
+- [ ] Fix issue with 1080P video eating up all the ram
+    * Create a raw frames object to manage raw frames
+    * Have it abstract all the io
+    * create a buffer with max buffer size under the hood to manage reading/writing frames to disk
 
 ## Features
 
@@ -132,10 +136,6 @@ Each pizzazz takes as input the rendered video frames and audio and outputs it's
 ### Subtitle Creator
 
 Adds subtitles in various colors to the output video. Currently, uses cached subtitles from the initial highlighting step. A more optimized version would generate it's own subtitles using the subtitle utility if the subtitles in the cache are empty.
-
-### Resize
-
-Resizes the video frames to be 1080.
 
 # Quality Control
 This is the fourth step in the pipeline. It takes as input the rendered videos and determines whether or not they meet some kind of quality threshold. 

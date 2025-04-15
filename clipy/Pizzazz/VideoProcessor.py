@@ -2,7 +2,6 @@ import os
 from ..Utilities import Logger, Helper, GhostCache, Profiler
 import moviepy.editor as mp
 
-
 """
 VideoProcessor.py 
 

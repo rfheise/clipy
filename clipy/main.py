@@ -50,15 +50,6 @@ def main():
     # Adding pizzazz to the subtitles
     creator = VideoProcessor(clips, cache = cache)
 
-    
-    if not Config.debug_mode:
-        #TODO remove this section entirely
-        #needs to be merged into render 
-        #also make size an input arg
-
-        #resize the output video
-        creator.add_pizzazz(ResizeCreator(new_size=(1080,1920),cache=cache))
-
     #add Subtitle Writer to pizzazz
     creator.add_pizzazz(SubtitleCreator(cache=cache))
 
