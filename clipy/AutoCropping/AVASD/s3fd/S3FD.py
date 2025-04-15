@@ -51,12 +51,12 @@ class S3FDImageSet(Dataset):
         for scene in self.scenes:
             for frame in scene.get_frames():
                 if self.w is None or self.h is None:
-                    self.w = frame.shape[1]
-                    self.h = frame.shape[0]
+                    self.w = frame.get_cv2().shape[1]
+                    self.h = frame.get_cv2().shape[0]
                 self.frames.append(frame)
 
     def __getitem__(self, idx):
-        return self.scale_image(self.frames[idx])
+        return self.scale_image(self.frames[idx].get_cv2())
     
     def scale_image(self, frame):
         

@@ -11,7 +11,7 @@ def main():
     os.makedirs(".cache", exist_ok=True)
 
     #initializes the logger and processes input args
-    Config.init()
+    Config.init(debug=True)
     Logger.init()
 
     #gets in file & outdir from input args
@@ -46,6 +46,9 @@ def main():
     cache.save(cache_file)
 
     # Cropping the video
+    # cache.clear("videos")
+    # cache.clear(f"clip-0-scenes")
+    # cache.clear(f"clip-1-scenes")
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
     cache.save(cache_file)
@@ -57,10 +60,7 @@ def main():
     creator.add_pizzazz(SubtitleCreator(cache=cache))
 
     #render the output clips
-    output_size = (1080,1920)
-    if Config.debug_mode:
-        output_size = (270,480)
-    creator.render(output_dir=out_dir, output_size=output_size)
+    creator.render(output_dir=out_dir, output_size=(1080,1920))
 
     Profiler.stop()
     

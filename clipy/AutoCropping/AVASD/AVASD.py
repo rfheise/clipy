@@ -77,23 +77,21 @@ class AVASD(AutoCropper):
         Profiler.start("speaker detection")
         self.score_tracks(clip.get_scenes(), clip.id)
         Profiler.stop("speaker detection")
+        
 
         # if debug mode is enabled it saves bounding boxes
         if Config.debug_mode:
             Logger.debug(f"Saving Bounding Boxes For Clip")
             os.makedirs("./debug/bboxes", exist_ok=True)
             self.draw_bbox_around_scene( f"./debug/bboxes/bboxes-{clip.id}.mp4", clip.get_scenes())
-        
         # frees up memory
         # by deleting the frames in the scene
         # otherwise it will keep every frame from every clip in memory and probably get killed
         # tbh this whole scene.load()/free() paradigm is a little scuffed
         for scene in clip.get_scenes():
             scene.free_frames_from_tracks()
-        
         #cache rendered clip if in debug/dev mode
         self.cache.set_item(f"clip-{clip.id}-scenes", clip.get_scenes(), level="dev")
-        
 
     def draw_bbox_around_scene(self, fname, scenes):
 
@@ -167,6 +165,8 @@ class AVASD(AutoCropper):
                         frame.set_score(s.mean())
 
                 pbar.update(1)
+        for scene in scenes:
+            scene.free_frames_from_tracks()
 
     def generate_facial_tracks(self, clip):
         
@@ -227,7 +227,7 @@ class AVASD(AutoCropper):
                 facial_tracks = []
 
             scene.set_tracks(facial_tracks)
-            scene.free_frames()
+            scene.free_frames_from_tracks()
 
         return scenes
 
@@ -252,7 +252,7 @@ class AVASD(AutoCropper):
                 
                 #create a face using the raw frame, bbox, and conf values
                 bbox = frame_bbox[i]
-                face = Face.init_from_cv2_frame(frames[curr_frame - scenes[0].frame_start], curr_frame)
+                face = Face.init_from_cv2_frame(frames[curr_frame - scenes[0].frame_start].get_cv2(), curr_frame)
                 face.set_face_detection_args(bbox[:-1], bbox[-1])
 
                 faces.append(face)

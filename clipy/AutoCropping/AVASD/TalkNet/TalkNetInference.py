@@ -47,9 +47,9 @@ class TalkNetInference():
         video = self.load_frames_for_avasd(track)
         audio = self.load_audio_for_avasd(track)
 
-        if Config.debug_mode:
-            # saves video of facial track for debugging
-            self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip_id)
+        # if Config.debug_mode:
+        #     # saves video of facial track for debugging
+        #     self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip_id)
         
         score = self.eval_model(video, audio, track.scene.fps)
 
@@ -171,6 +171,7 @@ class TalkNetInference():
         #loads the frames from the disk as cv2 image
         track.load_frames()
     
+        raw_frames = []
         for frame in track.frames:
             
             
@@ -193,42 +194,43 @@ class TalkNetInference():
             #I have to preprocess my data in the exact same way
             cs = .4
             bsi = int(bs * (1 + 2 * cs))
-            frame.cv2 = np.pad(frame.cv2, ((bsi,bsi), (bsi,bsi), (0, 0)), 'constant', constant_values=(110, 110))
+            raw = frame.cv2.get_cv2()
+            raw = np.pad(raw, ((bsi,bsi), (bsi,bsi), (0, 0)), 'constant', constant_values=(110, 110))
             my = y + bsi 
             mx = x + bsi
 
             #makes sure new bbox is within the bounds of the image
             ys = max(int(my-bs),0)
-            ye = min(int(my+bs*(1+2*cs)), frame.cv2.shape[0])
+            ye = min(int(my+bs*(1+2*cs)), raw.shape[0])
             xs = max(int(mx-bs*(1+cs)),0)
-            xe = min(int(mx+bs*(1+cs)),frame.cv2.shape[1])
+            xe = min(int(mx+bs*(1+cs)),raw.shape[1])
 
             if xs == xe:
                 if xe == 0:
                     xe = 1 
-                if xs == frame.cv2.shape[1]:
-                    xs = frame.cv2.shape[1] - 1
+                if xs == raw.shape[1]:
+                    xs = raw.shape[1] - 1
             if ys == ye:
-                if ys == frame.cv2.shape[0]:
-                    ys = frame.cv2.shape[0]  -1 
+                if ys == raw.shape[0]:
+                    ys = raw.shape[0]  -1 
                 if ye == 0:
                     ye = 1
-            frame.cv2 = frame.cv2[ys:ye, xs:xe]
+            raw = raw[ys:ye, xs:xe]
 
             # resize face so it can be used as input to the model
-            frame.cv2 = cv2.resize(frame.cv2, (224, 224))
+            raw = cv2.resize(raw, (224, 224))
 
             #convert to grayscale for efficiency
-            frame.cv2 = cv2.cvtColor(frame.cv2, cv2.COLOR_BGR2GRAY)
+            raw = cv2.cvtColor(raw, cv2.COLOR_BGR2GRAY)
             
             #one more resize for good measure
             #tbh idk why this is here and I probably don't need it
             #but don't feel like removing it
-            frame.cv2 = cv2.resize(frame.cv2, (224,224))
+            raw = cv2.resize(raw, (224,224))
             
             #idk why he only uses half the face
             #probably for efficiency as this focuses on the lips
-            frame.cv2 = frame.cv2[int(112-(112/2)):int(112+(112/2)), int(112-(112/2)):int(112+(112/2))]
-
+            raw = raw[int(112-(112/2)):int(112+(112/2)), int(112-(112/2)):int(112+(112/2))]
+            raw_frames.append(raw)
         # return preprocessed frames from clip
-        return np.array([frame.cv2 for frame in track.frames])
+        return np.array(raw_frames)

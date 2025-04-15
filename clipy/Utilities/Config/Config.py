@@ -22,6 +22,8 @@ class Config():
 
         #initializes all the arguments specified by the user
         Config.args = Config.init_args()
+        if debug:
+            Config.args.debug_mode = debug
         Config.debug_mode = Config.args.debug_mode
         if Config.debug_mode:
             Config.init_debug()

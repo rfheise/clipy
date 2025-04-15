@@ -39,7 +39,7 @@ class VideoProcessor:
                                   ffmpeg_params=["-crf", "18", "-preset", "medium"],
                                    audio_codec="aac", logger=None)
 
-    def render(self, output_dir="clips"):
+    def render(self, output_dir="clips", output_size=None):
         os.makedirs(output_dir, exist_ok=True)
         Profiler.start("render")
 
@@ -50,7 +50,7 @@ class VideoProcessor:
             Logger.log(f"Rendering {outfile}")
             
             #actually crops the raw video frames and resizes them to a short
-            frames,audio = video.render()
+            frames,audio = video.render(output_size)
 
             #adds additional pizzazz specified by the user
             for pizzazz in self.pizzazz_list:

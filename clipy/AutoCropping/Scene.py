@@ -15,7 +15,7 @@ A scene contains a collection of object tracks and is used to load the raw frame
 class Scene():
 
     counter = 0
-    def __init__(self, video_file, start,end, frame_start, frame_end):
+    def __init__(self, video_file, start,end, frame_start, frame_end, frame_buffer = None):
         
         #start/end in seconds
         self.start = start 
@@ -54,6 +54,8 @@ class Scene():
         # right now it assumes one object per scene
         self._scene_center = (None, None)
 
+        self.frame_buffer = frame_buffer
+
     @property
     def frame_duration(self):
         #duration of scene in frames
@@ -91,12 +93,12 @@ class Scene():
         return self._fps
 
     @classmethod
-    def init_from_pyscene(cls, fname, scene):
+    def init_from_pyscene(cls, fname, scene, fb):
 
         #initializes a scene from pyscene object
         #python scene-detection library is initially used to detect scenes (video cuts)
         return cls(fname, scene[0].get_seconds(), scene[1].get_seconds(),
-                   scene[0].get_frames(), scene[1].get_frames())
+                   scene[0].get_frames(), scene[1].get_frames(),frame_buffer=fb)
 
     def get_timestamp(self):
         return Timestamp(self.start, self.end)
@@ -135,7 +137,10 @@ class Scene():
 
     def free_frames(self):
         # frees frames from memory
-        self.frames = None    
+        if self.frames is not None:
+            for frame in self.frames:
+                frame.clear()
+            self.frames = None
 
     def load_frames(self, mode = "model"):
 
@@ -160,7 +165,8 @@ class Scene():
             #TODO mode should be color scheme and not use case
             if mode == "model":
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            self.frames.append(frame)
+            self.frames.append(self.frame_buffer.add_frame(i, frame))
+        
         #close video file
         cap.release()
     
@@ -309,6 +315,6 @@ class Scene():
 
     def free_frames_from_tracks(self):
         #frees frames from memory
-        self.frames = None
+        self.free_frames()
         for track in self:
             track.free_frames()

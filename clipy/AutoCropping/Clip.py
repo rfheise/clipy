@@ -1,4 +1,4 @@
-from ..Utilities import detect_scenes, GhostCache, Logger, Timestamp
+from ..Utilities import detect_scenes, GhostCache, Logger, Timestamp, FrameBuffer, RawFrame
 from .Scene import Scene
 import math
 import cv2 
@@ -35,7 +35,7 @@ class Clip():
 
     # counter for clip id
     counter = 0
-    def __init__(self, video_file, scenes, cache=GhostCache()):
+    def __init__(self, video_file, scenes, frame_buffer, cache=GhostCache()):
         
         self.cache = cache
 
@@ -59,6 +59,9 @@ class Clip():
         self.width = None
         self.height = None
 
+        #frame buffer
+        self.frame_buffer = frame_buffer
+
     def set_dims(self,frame):
         # sets dimensions of the output video before rendering
         self.width = round(frame.shape[0] * self.aspect_ratio)
@@ -75,7 +78,7 @@ class Clip():
 
         return audio 
     
-    def render(self):
+    def render(self, new_size=None):
         #TODO after looking over this code with non-sleep deprived eyes
         #it's kind of bad and needs redone 
         #should have functionality of multiple "centers"
@@ -94,17 +97,33 @@ class Clip():
             keep_ratio = (center == scene.scene_center)
             
             for frame in scene.get_frames():
+                #keep old size if new size is None
+                if new_size is not None:
+                    old_shape = frame.get_cv2().shape
+                    frame.set_cv2(self.resize_frame(frame.get_cv2(), new_size))
+                    new_shape = frame.get_cv2().shape
+                    center = [*scene.get_center()]
+                    center[0] = round(center[0] * new_shape[1]/old_shape[1])
+                    center[1] = round(center[1] * new_shape[0]/old_shape[0])
+                
                 if self.height is None or self.width is None:
-                    self.set_dims(frame)
+                    self.set_dims(frame.get_cv2())
 
                 # crops frame and adds it to list of rendered frames
-                new_frame =  self.crop_cv2(frame, center, keep_ratio)
-                frames.append(new_frame)     
+                new_frame =  self.crop_cv2(frame.get_cv2(), center, keep_ratio)
+                frame.set_cv2(new_frame)
+                frames.append(frame)     
         
         #returns rendered frames and audio
         # will be combined in Video Processing step
         return frames, self.get_audio() 
     
+    def resize_frame(self, frame, new_size):
+
+        new_h = new_size[1]
+        new_w = round(new_size[1] * frame.shape[1]/frame.shape[0])
+        return cv2.resize(frame, (new_w, new_h))
+
     def get_dims_from_center(self, c, width, max_val):
         
         #gets center width of clip since the height remains the same
@@ -174,13 +193,14 @@ class Clip():
     @classmethod
     def init_from_timestamp(cls, video_file, timestamp, cache=GhostCache()):
 
+        fb = FrameBuffer()
         #initializes a clip from a video file & (start, end timestamp)
         scenes = detect_scenes(video_file, cache=cache)
         # get all scenes in interval
         clip_scenes = []
         for scene in scenes:
             # intializes scene from pyscene object
-            scene = Scene.init_from_pyscene(video_file, scene)
+            scene = Scene.init_from_pyscene(video_file, scene, fb)
 
             # double check this if statement
             # seems kind of sus ngl

@@ -20,7 +20,7 @@ def preprocess_video(video_file):
             '-loglevel', 'error',
             '-hide_banner',
             '-r', '25',            # Set output frame rate to 25 fps.
-            '-vf', 'scale=-2:480',
+            # '-vf', 'scale=-2:480',
             '-c:v', 'libx264',     # Use libx264 for video encoding.
             '-crf', '18',          # CRF value for quality control.
             '-preset', 'medium',   # Encoding preset.

@@ -132,7 +132,7 @@ class Face(Frame):
         y = int((self.bbox[3] + self.bbox[1])/2)
         b_width = self.bbox[2] - self.bbox[0]
         b_height= self.bbox[3] - self.bbox[1]
-        Helper.draw_box_on_frame(self.cv2, (x,y), (b_width, b_height), color=color)
+        Helper.draw_box_on_frame(self.cv2.get_cv2(), (x,y), (b_width, b_height), color=color)
 
 
 
@@ -203,7 +203,7 @@ class FacialTrack(Track):
             if not setinel:
                 # if frame not in facial track
                 # add it to facial track and use estimated bbox position as position of face in frame
-                new_face = Face.init_from_cv2_frame(frame, i + self.scene.frame_start)
+                new_face = Face.init_from_cv2_frame(frame.get_cv2(), i + self.scene.frame_start)
                 bbox = []
                 conf = conf_func(face.idx)
                 for j in range(4):

@@ -45,11 +45,13 @@ def write_video(frames, output_path, fps):
       fps (int): Frames per second for the output video.
     """
     # Get dimensions from the first frame.
-    if len(frames[0].shape) == 2:  # Grayscale image
-        frames = [cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR) for frame in frames]
-    elif len(frames[0].shape) == 3:  # RGBA image
-        frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames]
-    height, width = frames[0].shape[:2]
+    if len(frames[0].get_cv2().shape) == 2:  # Grayscale image
+        for frame in frames:
+            frame.set_cv2(cv2.cvtColor(frame.get_cv2(), cv2.COLOR_GRAY2BGR))
+    elif len(frames[0].get_cv2().shape) == 3:  # RGBA image
+        for frame in frames:
+            frame.set_cv2(cv2.cvtColor(frame.get_cv2(), cv2.COLOR_BGR2RGB))
+    height, width = frames[0].get_cv2().shape[:2]
     # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
     # video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
     # for frame in frames:
@@ -91,7 +93,7 @@ def write_video(frames, output_path, fps):
     
     # Write each frame's raw bytes to FFmpeg's stdin.
     for frame in frames:
-        process.stdin.write(frame.tobytes())
+        process.stdin.write(frame.get_cv2().tobytes())
     
     # Close stdin and wait for FFmpeg to finish.
     process.stdin.close()
