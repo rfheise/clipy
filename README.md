@@ -68,7 +68,6 @@ You can also try to use gpt-o4-mini (used in debug mode) instead of o3-mini sinc
 * Crops the video around the person speaking
 * Adds PIZZAZZ to the output video 
     * Subtitles
-    * 1080 Rendering
     * More on the way
 
 # How Does It Work/Developer Information
@@ -76,8 +75,5 @@ See [Dev-info.md](Dev-info.md) for more details
 
 # Acknowledgements  
 The TalkNet & S3FD model weights and preprocessing steps are modified from this [repository](https://github.com/TaoRuijie/TalkNet-ASD)
-
-# Contact 
-For any questions, comments, or suggestions my email is ryan@heise.ai
 
 
