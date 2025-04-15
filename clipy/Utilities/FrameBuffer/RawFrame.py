@@ -3,11 +3,16 @@
 #add global buffer if needed
 import os 
 from ..Logging.Logger import Logger 
+from ..Profiler.Profiler import Profiler
+from ..Config.Config import Config
 import cv2 
 
 class FrameBuffer():
 
-    def __init__(self, frame_dir=None, max_buffer_len=25):
+    def __init__(self, frame_dir=None, max_buffer_len=None):
+
+        if max_buffer_len is None:
+            max_buffer_len = Config.args.max_frame_buffer_size
 
         #RawFrame objects
         self.frames = {}
@@ -54,12 +59,7 @@ class FrameBuffer():
         if idx not in self.frame_ids:
             Logger.log_warning("frame not in buffer")
             return None
-
-        if idx in self.buffer_ids:
-            return self.buffer[idx]
         
-        self.frames[idx].get_cv2()
-        self.add_frame_to_buffer(self.frames[idx])
         return self.frames[idx]
     
     def remove_top(self):
@@ -72,6 +72,7 @@ class FrameBuffer():
     def remove(self, idx):
         #shouldn't double free
         #remove this in the future and fix data flow
+        
         if idx not in self.frame_ids:
             return
         self.frame_ids.remove(idx)
@@ -83,7 +84,8 @@ class FrameBuffer():
         del self.frames[idx]
     
     def clear(self, frame_ids=None):
-        
+
+        Logger.debug("Buffer 💣")
         if frame_ids is None:
             frame_ids = [*self.frame_ids]
 
@@ -105,9 +107,12 @@ class RawFrame():
         self.dirty = dirty=dirty
         self.buffer = buffer 
         self.fname = fname
+        self.render_ops = []
     
     def to_disk(self):
+        Profiler.start("frame saving")
         if not self.dirty:
+            self.cv2 = None
             return
         success = cv2.imwrite(self.fname, self.cv2)
         if not success:
@@ -115,6 +120,7 @@ class RawFrame():
             exit(5)
         self.cv2 = None 
         self.dirty = False
+        Profiler.stop("frame saving")
     
     def set_cv2(self,cv2):
 
@@ -130,7 +136,7 @@ class RawFrame():
         if self.cv2 is not None:
             return self.cv2
         
-
+        Profiler.start("frame loading")
         self.dirty = False
         self.cv2 = cv2.imread(self.fname)
 
@@ -140,6 +146,7 @@ class RawFrame():
 
         if self.buffer:
             self.buffer.add_frame_to_buffer(self)
+        Profiler.stop("frame loading")
         return self.cv2
     
     def clear(self):
@@ -149,3 +156,21 @@ class RawFrame():
         
         if os.path.exists(self.fname):
             os.remove(self.fname)
+
+    def add_op(self, op):
+        
+        self.render_ops.append(op)
+    
+    def render(self):
+        
+        #careful because cv2 no longer 
+        #managed by buffer
+        raw_frame_cv2 = self.cv2
+        if not self.cv2 is not None:
+            raw_frame_cv2 = cv2.imread(self.fname)
+            if raw_frame_cv2 is None:
+                Logger.log_error("Error reading frame from disk")
+                exit(7)
+        for op in self.render_ops:
+            raw_frame_cv2 = op(raw_frame_cv2)
+        return raw_frame_cv2

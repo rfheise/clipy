@@ -59,6 +59,7 @@ class Config():
         parser.add_argument('--num-clips', type=int, default=None, help='Number of clips to output')
         parser.add_argument('--load-cache-file', type=str, default=None, help='Cache file to load')
         parser.add_argument('--no-preprocess-video', default=False, action='store_true', help='Do not preprocess video before running clipy')
+        parser.add_argument('--max-frame-buffer-size', type=int, default = 25, help='maximum size (in frames) of frame buffer')
         args = parser.parse_args()
         return args
         

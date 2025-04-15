@@ -34,10 +34,13 @@ class VideoProcessor:
         #adds audio to loaded movie py frame video
         new_video.audio = audio
 
+        Logger.log(f"Saving video to: {fname}")
         #writes video to output file
+        Profiler.start("to video")
         new_video.write_videofile(fname, codec="libx264",
                                   ffmpeg_params=["-crf", "18", "-preset", "medium"],
                                    audio_codec="aac", logger=None)
+        Profiler.stop("to video")
 
     def render(self, output_dir="clips", output_size=None):
         os.makedirs(output_dir, exist_ok=True)
@@ -63,6 +66,6 @@ class VideoProcessor:
             #frees frames from memory
             video.destroy_buffer()
             
-            print(f"Processed video saved at: {outfile}")
+            Logger.log(f"Processed video saved at: {outfile}")
 
         Profiler.stop("render")

@@ -46,9 +46,9 @@ def main():
     cache.save(cache_file)
 
     # Cropping the video
-    # cache.clear("videos")
-    # cache.clear(f"clip-0-scenes")
-    # cache.clear(f"clip-1-scenes")
+    cache.clear("videos")
+    for i in range(50):
+        cache.clear(f"clip-{i}-scenes")
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
     cache.save(cache_file)
