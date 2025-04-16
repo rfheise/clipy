@@ -135,18 +135,23 @@ class AVASD(AutoCropper):
         pbar = tqdm(total=total)
 
         # loops through all the tracks in the clip and scores them
+        d = os.path.join(".cache","preprocessed_clips")
+        os.makedirs(d, exist_ok=True)
+        tmp_video = os.path.join(d,f"clip-{clip.id}.mp4")
+        Helper.preprocess_video(clip.video_file,tmp_video, clip.get_start(), clip.get_end() + 1)
         for tracks in clip.get_scenes():
             for track in tracks:
                 
                 # only scores facial track
                 if type(track) is FacialTrack:
-                    score = self.get_score(track, clip.id)
+                    score = self.get_score(track, clip, tmp_video)
                     for i,frame in enumerate(track.frames):
                         # smoothing for frame score
                         s = score[max(i - 2, 0):min(i + 3, len(track.frames))]
                         frame.set_score(s.mean())
 
                 pbar.update(1)
+        os.remove(tmp_video)
 
     def generate_facial_tracks(self, clip):
         
@@ -210,7 +215,10 @@ class AVASD(AutoCropper):
     def detect_faces(self, clip):
         
         #gets all bboxes across all frames
-        bboxes = self.fdm.detect_faces(clip,scales = [Config.args.scale_s3fd],
+        video_shape = clip.get_frames()[0].get_cv2().shape
+        video_scale = max(video_shape[1]/720, video_shape[0]/480)
+
+        bboxes = self.fdm.detect_faces(clip,scales = [Config.args.scale_s3fd/video_scale],
                                         conf_th=Config.args.conf_th_s3fd,
                                         min_face_percentage=Config.args.min_face_percentage)
         scene_faces = []
@@ -239,23 +247,10 @@ class AVASD(AutoCropper):
         return scene_faces
     
 
-    def get_score(self, track, clip_id):
+    def get_score(self, track, clip_id, tmp_video):
         
         # gets score of facial track from avasd model
-        return self.avasd_model.get_score(track, clip_id)
-    
-    def crop(self):
-        
-        # Since talknet requires the video to be 25fps & 16000HZ
-        # preprocess the input video before clips are generated to meet this requirement
-        if not Config.args.no_preprocess_video:
-            # have to clear scenes from cache as frames will no longer line up
-            self.cache.clear("scenes")
-            # TODO remove this and make TalkNet work with variable fps & audio sample rates
-            self.video_file = Helper.preprocess_video(self.video_file)
-
-        # call parent crop method to generate clips
-        return super().crop()
+        return self.avasd_model.get_score(track, clip_id, tmp_video)
             
 
 if __name__ == "__main__":

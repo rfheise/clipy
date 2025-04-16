@@ -48,6 +48,14 @@ class CropOp(FrameOp):
     arg_format = [Arg("xs"), Arg("xe"), Arg("ys"), Arg("ye")]
 
     def process_frame(self, frame):
+        if self.ys is None:
+            self.ys = 0 
+        if self.xs is None:
+            self.xs = 0 
+        if self.xe is None:
+            self.xe = frame.shape[1]
+        if self.ye is None:
+            self.ye = frame.shape[0]
         return frame[self.ys:self.ye, self.xs:self.xe]
 
 class ResizeOp(FrameOp):

@@ -70,13 +70,14 @@ class SubtitleCreator(Pizzazz):
                 
                 #I set the font size using 480p video as reference
                 #Scales font to og size
-                self.scale = frame.get_cv2().shape[0] / 480
+                self.scale = frame.render().shape[0] / 480
 
             frame_idx = i + frame_start 
             for subtitle in subtitles:
                 if (subtitle.timestamp.get_start_frame(fps) <= frame_idx\
                     and subtitle.timestamp.get_end_frame(fps) > frame_idx):
                     frame.add_op(SubtitleFrameOp(text=subtitle.text, color=self.color, scale = self.scale))
+        self.scale = None
         return frames, audio
 
         

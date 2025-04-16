@@ -48,7 +48,8 @@ class Track():
 
         # gets center of frame
         # each frame object can set it's own center for cropping purposes
-        return self.frames[0].center
+
+        return self.scene.scene_center
     
     def get_center_from_none(self):
         

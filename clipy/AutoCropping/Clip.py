@@ -66,12 +66,6 @@ class Clip():
         #frame shape 
         self.frame_shape = None
 
-    def set_dims(self,frame):
-        self.frame_shape = frame.shape
-        # sets dimensions of the output video before rendering
-        self.width = round(frame.shape[0] * self.aspect_ratio)
-        self.height = frame.shape[0]
-
     def get_audio(self):
         # gets clip audio as movie py audio object
         # easy implementation for initial rendering
@@ -90,6 +84,8 @@ class Clip():
         #should handle variable aspect ratios not just binary (is 9:16 or nah)
 
         frames = []
+        if self.frame_shape is None:
+            self.frame_shape = self.buffer.get_frame(self.get_start_frame()).get_cv2().shape
         # renders all "shots in clip"
         for scene in self.scenes:
             
@@ -102,9 +98,6 @@ class Clip():
             
             for frame in self.get_frames(scene.frame_start, scene.frame_end):
 
-                if self.height is None or self.width is None:
-                    self.set_dims(frame.get_cv2())
-
                 #keep old size if new size is None
                 if new_size is not None:
                     old_shape = self.frame_shape
@@ -112,11 +105,13 @@ class Clip():
                     center = [*scene.get_center()]
                     center[0] = round(center[0] * new_shape[1]/old_shape[1])
                     center[1] = round(center[1] * new_shape[0]/old_shape[0])
-                
-                
+
+                if self.width is None or self.height is None:
+                    self.width = round(new_shape[0] * self.aspect_ratio)
+                    self.height = new_shape[0]
 
                 # crops frame and adds it to list of rendered frames
-                self.crop_cv2(frame, center, keep_ratio)
+                self.crop_cv2(frame, center, keep_ratio, new_shape)
                 frames.append(frame)     
         
         #returns rendered frames and audio
@@ -128,7 +123,7 @@ class Clip():
         new_h = new_size[1]
         new_w = round(new_size[1] * self.frame_shape[1]/self.frame_shape[0])
         frame.add_op(FrameOp.ResizeOp(new_w, new_h))
-        return (new_w, new_h)
+        return (new_h,new_w)
 
     def get_dims_from_center(self, c, width, max_val):
         
@@ -143,21 +138,21 @@ class Clip():
         # returns start and end of crop
         return (xs, xe)
     
-    def crop_cv2(self, frame, center, keep_ratio):
+    def crop_cv2(self, frame, center, keep_ratio, new_shape):
 
         # if keep ratio of og clip is not the same
         # actually crop it 
         # otherwise resize it
         if not keep_ratio:
-            return self.actually_crop(frame, center)
+            return self.actually_crop(frame, center, new_shape)
         else:
             return self.resize_for_frame(frame)
     
-    def actually_crop(self, frame, center):
+    def actually_crop(self, frame, center, new_shape):
         
         #get start and end of crop
-        xs, xe = self.get_dims_from_center(center[0], self.width, self.frame_shape[1])
-        frame.add_op(FrameOp.CropOp(xs, xe, 0, self.frame_shape[0]))
+        xs, xe = self.get_dims_from_center(center[0], self.width, new_shape[1])
+        frame.add_op(FrameOp.CropOp(xs=xs, xe=xe, ys=None, ye=None))
         return
         #keep height the same and return new frame
         return frame[:, xs:xe]

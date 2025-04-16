@@ -59,6 +59,7 @@ class OpenAIWhisper(SubtitleGenerator):
         #TODO don't use default sample rate 
         #make sure this is properly set by calling function
         if self.audio_segment is None:
+            self.sample_rate = AudioSegment.from_mp3(self.audio_file).frame_rate
             self.audio_segment = whisper.load_audio(self.audio_file,sr=self.sample_rate)
         
         #adds overlap to start and end timestamps

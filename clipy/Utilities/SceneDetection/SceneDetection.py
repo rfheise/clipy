@@ -31,7 +31,7 @@ def detect_scenes(fname, threshold=10, cache=GhostCache):
     # Set downscale factor to 2 (half resolution). If auto_downscale is enabled,
     # this parameter might be ignored, so you may want to disable it:
     scene_manager.auto_downscale = True
-    # scene_manager.downscale = 2
+    # scene_manager.downscale = 4
 
     scene_manager.detect_scenes(video, show_progress=True)
     scenes = scene_manager.get_scene_list()

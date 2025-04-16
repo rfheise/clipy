@@ -1,5 +1,5 @@
 import os 
-from ..Utilities import Logger, Helper, GhostCache, Profiler
+from ..Utilities import Logger, Helper, GhostCache, Profiler, Config,FrameOp
 import moviepy.editor as mp
 
 """
@@ -24,6 +24,9 @@ class VideoProcessor:
         
         #saves process frames and video to output clip
 
+        if Config.debug_mode:
+            for frame in frames:
+                frame.add_op(FrameOp.ResizeOp(270, 480))
         #saves frames to temp video file
         #basically this is kind of a hack that just loads the raw 
         #frames in to a movie editor object

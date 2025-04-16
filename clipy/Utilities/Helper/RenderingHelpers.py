@@ -53,7 +53,8 @@ def write_video(frames, output_path, fps):
       fps (int): Frames per second for the output video.
     """
     # Get dimensions from the first frame.
-    height, width = frames[0].get_cv2().shape[:2]
+    height, width = frames[0].render().shape[:2]
+
     # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
     # video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
     # for frame in frames:
@@ -82,7 +83,6 @@ def write_video(frames, output_path, fps):
             '-pix_fmt', 'bgr24', # Pixel format of the raw data.
             '-s', f'{width}x{height}', # Frame size.
             '-r', str(fps),      # Frame rate.
-            '-flush_packets', str(1),
             '-i', '-',           # Input comes from standard input.
             '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
             '-crf', '30',         # CRF 0 for lossless quality.
@@ -99,7 +99,59 @@ def write_video(frames, output_path, fps):
     # Write each frame's raw bytes to FFmpeg's stdin.
 
     for frame in frames:
-        process.stdin.write(to_rgb(frame.render()).tobytes())
+        f = to_rgb(frame.render())
+        process.stdin.write(f.tobytes())
+        process.stdin.flush()
+    # counter = 0
+    # for frame in frames:
+    #     if frame.cv2 is not None:
+    #         counter += 1
+
+    # Close stdin and wait for FFmpeg to finish.
+    process.stdin.close()
+    process.wait()
+
+def write_video_raw(frames, output_path, fps):
+    """
+    Writes a list of frames (numpy arrays) to a video file.
+    
+    Parameters:
+      frames (list): List of frames (numpy arrays).
+      output_path (str): Path to the output video file.
+      fps (int): Frames per second for the output video.
+    """
+    # Get dimensions from the first frame.
+    height, width = frames[0].shape[:2]
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can choose another codec if desired.
+    # video_writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    # for frame in frames:
+    #     video_writer.write(frame)
+    # video_writer.release()
+    command = [
+        'ffmpeg',
+        '-y',                # Overwrite output file if it exists.
+        '-f', 'rawvideo',    # Input format: raw video.
+        '-pix_fmt', 'bgr24', # Pixel format of the raw data.
+        '-s', f'{width}x{height}', # Frame size.
+        '-r', str(fps),      # Frame rate.
+        '-flush_packets', str(1),
+        '-i', '-',           # Input comes from standard input.
+        '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
+        '-crf', '30',         # CRF 0 for lossless quality.
+        '-preset', 'fast', # Use a slower preset for optimal compression.
+        output_path
+    ]
+    
+    # Open a subprocess with FFmpeg.
+    command = str(" ").join(command)
+    process = subprocess.Popen(command, stdin=subprocess.PIPE,   
+                               stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, shell=True)
+    
+    # Write each frame's raw bytes to FFmpeg's stdin.
+
+    for frame in frames:
+        process.stdin.write(to_rgb(frame).tobytes())
         process.stdin.flush()
     # counter = 0
     # for frame in frames:

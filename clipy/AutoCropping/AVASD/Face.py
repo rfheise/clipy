@@ -115,8 +115,8 @@ class Face(Frame):
         y = int((self.bbox[3] + self.bbox[1])/2)
         b_width = self.bbox[2] - self.bbox[0]
         b_height= self.bbox[3] - self.bbox[1]
-        Helper.draw_box_on_frame(self.raw_frame.get_cv2(), (x,y), (b_width, b_height), color=color)
-
+        f = Helper.draw_box_on_frame(self.raw_frame.get_cv2(), (x,y), (b_width, b_height), color=color)
+        self.raw_frame.set_cv2(f)
 
 
 class FacialTrack(Track):

@@ -52,6 +52,8 @@ def main():
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
     cache.save(cache_file)
+    for clip in clips:
+        clip.reset_frames()
 
     # Adding pizzazz to the subtitles
     creator = VideoProcessor(clips, cache = cache)

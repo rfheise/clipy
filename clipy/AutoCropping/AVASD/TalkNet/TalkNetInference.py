@@ -10,6 +10,7 @@ from ....Utilities import Logger, Helper, Config
 import moviepy.editor as mp
 import random
 import subprocess
+from scipy.interpolate import interp1d
 
 """
 Code for running TalkNet ASD on a set of images. 
@@ -39,21 +40,30 @@ class TalkNetInference():
         self.winstep = 0.010
         self.device = device
 
-    def get_score(self, track, clip_id=0):
+    def get_score(self, track, clip, processed_video):
 
         # generates random value for facial track debugging
         track.rand = random.randint(0,10**8)
         
-        video = self.load_frames_for_avasd(track)
+        video = self.load_frames_for_avasd(track, clip, processed_video)
         audio = self.load_audio_for_avasd(track)
 
-        # if Config.debug_mode:
-        #     # saves video of facial track for debugging
-        #     self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip_id)
+        if Config.debug_mode:
+            # saves video of facial track for debugging
+            self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip.id)
         
-        score = self.eval_model(video, audio, track.scene.fps)
-
+        score = self.eval_model(video, audio, self.get_fps(processed_video))
+        score = self.interp_scores(score, track, clip)
         return score
+    
+    def interp_scores(self,scores, track,clip):
+        start = (track.frames[0].idx - clip.get_start_frame())/track.scene.fps
+        end = (track.frames[-1].idx - clip.get_start_frame())/track.scene.fps
+
+        times = np.linspace(start, end, num=scores.shape[0], endpoint=False)
+        interp_func = interp1d(times, scores,bounds_error=False, fill_value="extrapolate")
+        times = np.linspace(start, end, num=len(track.frames), endpoint=False)
+        return interp_func(times)
     
     def write_out(self, video, audio,fps, track, clip_id):
 
@@ -62,7 +72,7 @@ class TalkNetInference():
         os.makedirs(f"./debug/talknet-inputs/{clip_id}/{track.scene.idx}", exist_ok=True)
         out_video = f"./debug/talknet-inputs/{clip_id}/{track.scene.idx}/video.mp4"
 
-        Helper.write_video(video, "./debug/scene-track.tmp.mp4",fps=fps)
+        Helper.write_video_raw(video, "./debug/scene-track.tmp.mp4",fps=fps)
 
         new_video=mp.VideoFileClip("./debug/scene-track.tmp.mp4")
         new_video.audio = audio
@@ -85,10 +95,14 @@ class TalkNetInference():
         av_scale = audio_scale/fps #numer of audio frames per video frame
 
         #total duration of clip
-        length = video.shape[0]
-    
+        length = min(video.shape[0]/fps, audio.shape[0]/audio_scale)
+        length = int(length * fps)
         #trim audio to match video length
         audio = audio[:int(length * av_scale)]
+        video = video[:int(length)]
+
+        #trim video to match audio length
+
 
         for duration in durationSet:
             duration = duration * fps # duration of batch in frames
@@ -162,13 +176,81 @@ class TalkNetInference():
         #mel-frequency cepstral coefficient for audio input
         return mfcc(audio, 16000, numcep = 13, winlen = 0.025, winstep = 0.010)
     
-    def load_frames_for_avasd(self, track):
-        
+    def get_fps(self, video_file):
+        cap = cv2.VideoCapture(video_file)
+
+        # Get frames per second (FPS) of the video.
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        cap.release()
+        return fps 
     
+    def get_new_bboxes(self, faces, new_frames, start, end):
+
+        # get start times 
+        
+        times = np.linspace(start, end, num=len(faces), endpoint=False)
+        bboxes = np.array([np.array(face.bbox) for face in faces])
+        inter_funcs = []
+        for i in range(4):
+            inter_funcs.append(interp1d(times, bboxes[:,i], bounds_error=False, fill_value="extrapolate"))
+        
+        new_bboxes = []
+        times = np.linspace(start, end, num=len(new_frames), endpoint=False)
+        for time in times:
+            new_bbox = []
+            for i in range(4):
+                if i % 2 == 0:
+                    new_bbox.append(inter_funcs[i](time) * new_frames[0].shape[1]/faces[0].width)
+                else:
+                    new_bbox.append(inter_funcs[i](time)* new_frames[0].shape[0]/faces[0].height) 
+            new_bboxes.append(np.array(new_bbox))
+        return new_bboxes
+
+    def get_frames(self, video_path, start_sec, end_sec):
+        """
+        Extract frames from a video between start_sec and end_sec.
+
+        Parameters:
+            video_path (str): Path to the video file.
+            start_sec (float): Start time in seconds.
+            end_sec (float): End time in seconds.
+
+        Returns:
+            frames (list): List of frames (numpy arrays) captured between the given timestamps.
+        """
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise ValueError("Error opening video file")
+
+        # Set the starting position (in milliseconds)
+        cap.set(cv2.CAP_PROP_POS_MSEC, start_sec * 1000)
+
+        frames = []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # Get current time in milliseconds from the capture device
+            current_time_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
+            # If we have passed the end timestamp, break out of the loop.
+            if current_time_ms > end_sec * 1000:
+                break
+
+            frames.append(frame)
+
+        cap.release()
+        return frames
+        
+    def load_frames_for_avasd(self, track, clip, processed_video):
+        
+        
         raw_frames = []
+        start = (track.frames[0].idx - clip.get_start_frame())/track.scene.fps
+        end = (track.frames[-1].idx - clip.get_start_frame())/track.scene.fps
+        new_frames = self.get_frames(processed_video, start, end)
+        new_bboxes= self.get_new_bboxes(track.frames, new_frames, start, end)
         for frame in track.frames:
-            
-            
 
             #update bbox as square
             bbox = []
@@ -183,12 +265,27 @@ class TalkNetInference():
             bbox.append(y + bbox_height/2)
             frame.set_bbox(bbox)
 
+        #rescale bboxes 
+        for i in range(len(new_frames)):
+
+            #update bbox as square
+            bbox = []
+            bbox_height = abs(new_bboxes[i][1] - new_bboxes[i][3])
+            bbox_width = abs(new_bboxes[i][0] - new_bboxes[i][2])
+            bs = max(bbox_height, bbox_width)/2
+            x = (new_bboxes[i][0] + new_bboxes[i][2])/2
+            y = (new_bboxes[i][1] + new_bboxes[i][3])/2
+            bbox.append(x - bbox_width/2)
+            bbox.append(y - bbox_height/2)
+            bbox.append(x + bbox_width/2)
+            bbox.append(y + bbox_height/2)
+
             #weird scaling thing the original author did
             #since I'm reusing his pretrained model 
             #I have to preprocess my data in the exact same way
             cs = .4
             bsi = int(bs * (1 + 2 * cs))
-            raw = frame.raw_frame.get_cv2()
+            raw = new_frames[i]
             raw = np.pad(raw, ((bsi,bsi), (bsi,bsi), (0, 0)), 'constant', constant_values=(110, 110))
             my = y + bsi 
             mx = x + bsi
@@ -209,6 +306,7 @@ class TalkNetInference():
                     ys = raw.shape[0]  -1 
                 if ye == 0:
                     ye = 1
+
             raw = raw[ys:ye, xs:xe]
 
             # resize face so it can be used as input to the model
