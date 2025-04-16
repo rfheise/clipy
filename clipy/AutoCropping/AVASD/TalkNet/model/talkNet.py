@@ -9,7 +9,7 @@ from .talkNetModel import talkNetModel
 
 class talkNet(nn.Module):
     def __init__(self, device, lr = 0.0001, lrDecay = 0.95, **kwargs):
-        super(talkNet, self).__init__()        
+        super(talkNet, self).__init__()
         self.device = device
         self.model = talkNetModel().to(self.device)
         self.lossAV = lossAV().to(self.device)

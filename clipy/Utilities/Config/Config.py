@@ -60,6 +60,8 @@ class Config():
         parser.add_argument('--load-cache-file', type=str, default=None, help='Cache file to load')
         parser.add_argument('--no-preprocess-video', default=False, action='store_true', help='Do not preprocess video before running clipy')
         parser.add_argument('--max-frame-buffer-size', type=int, default = 25, help='maximum size (in frames) of frame buffer')
+        parser.add_argument('--save-bboxes', default=False, action='store_true', help="Create bounding box video for each clip" )
+        parser.add_argument('--save-facial-tracks', default=False, action='store_true', help="Save video of each facial track")
         args = parser.parse_args()
         return args
         
@@ -72,4 +74,6 @@ class Config():
         Config.args.subtitle_model = "tiny.en"
         Config.args.cache_level = "dev"
         Config.args.cache_file = "fd_test.sav"
+        Config.args.save_facial_tracks = False 
+        Config.args.save_bboxes = False
 

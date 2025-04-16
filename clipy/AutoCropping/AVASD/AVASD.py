@@ -80,7 +80,7 @@ class AVASD(AutoCropper):
         
 
         # if debug mode is enabled it saves bounding boxes
-        if Config.debug_mode:
+        if Config.args.save_bboxes:
             Logger.debug(f"Saving Bounding Boxes For Clip")
             os.makedirs("./debug/bboxes", exist_ok=True)
             self.draw_bbox_around_scene( f"./debug/bboxes/bboxes-{clip.id}.mp4", clip)
@@ -131,7 +131,8 @@ class AVASD(AutoCropper):
             total += len(scene.tracks)
 
         # prints this here so it doesn't print for every single track
-        Logger.debug("Saving Tracks For Faces")
+        if Config.args.save_facial_tracks:
+            Logger.debug("Saving Tracks For Faces")
         pbar = tqdm(total=total)
 
         # loops through all the tracks in the clip and scores them

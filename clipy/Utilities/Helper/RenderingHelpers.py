@@ -70,6 +70,7 @@ def write_video(frames, output_path, fps):
             '-s', f'{width}x{height}', # Frame size.
             '-r', str(fps),      # Frame rate.
             '-i', '-',           # Input comes from standard input.
+            '-vf', f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black",
             '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
             '-crf', '18',         # CRF 0 for lossless quality.
             '-preset', 'medium', # Use a slower preset for optimal compression.
@@ -85,16 +86,19 @@ def write_video(frames, output_path, fps):
             '-r', str(fps),      # Frame rate.
             '-i', '-',           # Input comes from standard input.
             '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
+            '-vf', f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black",
             '-crf', '30',         # CRF 0 for lossless quality.
             '-preset', 'fast', # Use a slower preset for optimal compression.
             output_path
         ]
     
     # Open a subprocess with FFmpeg.
-    command = str(" ").join(command)
+    # command = str(" ").join(command)
+    # print(str(" ").join(command))
     process = subprocess.Popen(command, stdin=subprocess.PIPE,   
                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL, shell=True)
+                                stderr=subprocess.DEVNULL, 
+                                shell=False)
     
     # Write each frame's raw bytes to FFmpeg's stdin.
 

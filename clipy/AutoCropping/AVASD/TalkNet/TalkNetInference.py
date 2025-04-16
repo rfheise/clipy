@@ -6,7 +6,7 @@ import math
 from scipy.io import wavfile
 import torch 
 import os
-from ....Utilities import Logger, Helper, Config
+from ....Utilities import Logger, Helper, Config, Profiler
 import moviepy.editor as mp
 import random
 import subprocess
@@ -48,7 +48,7 @@ class TalkNetInference():
         video = self.load_frames_for_avasd(track, clip, processed_video)
         audio = self.load_audio_for_avasd(track)
 
-        if Config.debug_mode:
+        if Config.args.save_facial_tracks:
             # saves video of facial track for debugging
             self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip.id)
         
@@ -244,7 +244,7 @@ class TalkNetInference():
         
     def load_frames_for_avasd(self, track, clip, processed_video):
         
-        
+        Profiler.start("preprocess")
         raw_frames = []
         start = (track.frames[0].idx - clip.get_start_frame())/track.scene.fps
         end = (track.frames[-1].idx - clip.get_start_frame())/track.scene.fps
@@ -324,5 +324,6 @@ class TalkNetInference():
             #probably for efficiency as this focuses on the lips
             raw = raw[int(112-(112/2)):int(112+(112/2)), int(112-(112/2)):int(112+(112/2))]
             raw_frames.append(raw)
+        Profiler.stop("preprocess")
         # return preprocessed frames from clip
         return np.array(raw_frames)
