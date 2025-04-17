@@ -160,7 +160,7 @@ def get_text_size(text, font):
     height = bbox[3] - bbox[1]
     return width, height
 
-def wrap_text_pil(text, font, max_width):
+def wrap_text_pil(text, font, max_width, padding=0):
     """
     Wraps text into a list of lines such that each line's width does not exceed max_width.
     """
@@ -185,7 +185,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-def draw_wrapped_text(frame, text, center, font_path, font_size, color,
+def draw_wrapped_text_save(frame, text, center, font_path, font_size, color,
                       max_width, scale=1, line_spacing=4,  border_thickness=1, border_color=(0, 0, 0)):
     """
     Draws wrapped text with a border (stroke) on the given OpenCV frame using a custom TrueType font.
@@ -252,4 +252,87 @@ def draw_wrapped_text(frame, text, center, font_path, font_size, color,
         y += line_heights[i] + line_spacing
 
     # Convert back to OpenCV BGR format.
+    return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+
+
+def draw_wrapped_text(frame, text, center, font_path, font_size, color,
+                                  max_width, scale=1, line_spacing=4, border_thickness=1, border_color=(0, 0, 0),
+                                  shadow_offset=(2, 2), shadow_color=(0, 0, 0)):
+    """
+    Draws wrapped text with a shadow and a border (stroke) on the given OpenCV frame using a custom TrueType font.
+    The text is wrapped so that no line exceeds max_width, and the text block is centered on the given center.
+    The shadow is drawn behind the text with the specified offset and color.
+
+    Parameters:
+      frame: OpenCV image (BGR).
+      text: Text string to draw.
+      center: Tuple (x, y) that is the center of the text block.
+      font_path: Path to the .ttf file for the custom font.
+      font_size: Font size.
+      color: Text color in RGB.
+      max_width: Maximum width in pixels for wrapping text.
+      line_spacing: Additional vertical spacing between lines.
+      border_thickness: Thickness of the border (stroke).
+      border_color: Color of the border in RGB.
+      shadow_offset: Tuple (x_offset, y_offset) for the shadow's position relative to the text.
+      shadow_color: Color of the shadow in RGB.
+
+    Returns:
+      OpenCV image (BGR) with the shadowed and outlined text drawn on it.
+    """
+    # Convert the OpenCV BGR image to a PIL RGB image
+    pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(pil_img)
+    # Load the custom font
+    font = ImageFont.truetype(font_path, font_size)
+    shadow_offset = (shadow_offset[0] * scale, shadow_offset[1] * scale)
+    # Wrap the text
+    lines = wrap_text_pil(text, font, max_width)
+    line_spacing *= scale
+    # Calculate dimensions of the text block
+    line_widths, line_heights = [], []
+    total_height = 0
+    for line in lines:
+        w, h = get_text_size(line, font)
+        line_widths.append(w)
+        line_heights.append(h)
+        total_height += h
+    total_height += line_spacing * (len(lines) - 1)
+    block_width = max(line_widths) if line_widths else 0
+
+    # Compute top-left coordinate so that the text block is centered
+    top_left_x = int(center[0] - block_width / 2)
+    top_left_y = int(center[1] - total_height / 2)
+
+    # Draw the shadow by rendering the text with an offset
+    y = top_left_y
+    for i, line in enumerate(lines):
+        line_width = line_widths[i]
+        x = int(center[0] - line_width / 2)
+        # Draw the shadowed text
+        draw.text(
+            (x + shadow_offset[0], y + shadow_offset[1]),
+            line,
+            font=font,
+            fill=shadow_color
+        )
+        y += line_heights[i] + line_spacing
+
+    # Draw the text with border (stroke)
+    y = top_left_y
+    for i, line in enumerate(lines):
+        line_width = line_widths[i]
+        x = int(center[0] - line_width / 2)
+        # Draw the text with stroke (border)
+        draw.text(
+            (x, y),
+            line,
+            font=font,
+            fill=color,
+            stroke_width=max(round(border_thickness * scale), 1),
+            stroke_fill=border_color
+        )
+        y += line_heights[i] + line_spacing
+
+    # Convert back to OpenCV BGR format
     return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)

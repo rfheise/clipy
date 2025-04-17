@@ -21,7 +21,7 @@ class Preset():
 
     ffmpeg_crf = 23
     ffmpeg_preset = "medium"
-    output_res = 720
+    output_res = 1280
     subtitle_model = "turbo"
     gpt_highlighting_model = 'o4-mini'
     name = "default preset"
@@ -34,7 +34,7 @@ class VeryGood(Preset):
 
     name = "verygood"
     ffmpeg_crf = 18 
-    output_res = 1080
+    output_res = 1920
     subtitle_model = "turbo"
     gpt_highlighting_model = 'o4-mini'
     ffmpeg_preset = 'slow'
@@ -43,7 +43,7 @@ class Mid(Preset):
 
     name = "mid"
     ffmpeg_crf = 23 
-    output_res = 480
+    output_res = 720
     subtitle_model = "tiny.en"
     gpt_highlighting_model = 'o4-mini'
     ffmpeg_preset = 'medium'
@@ -52,7 +52,7 @@ class Bad(Preset):
 
     name = "bad"
     ffmpeg_crf = 28 
-    output_res = 480
+    output_res = 640
     subtitle_model = "small.en"
     gpt_highlighting_model = 'gpt-4o-mini'
     ffmpeg_preset = 'medium'
@@ -61,7 +61,7 @@ class VeryBad(Preset):
 
     name = "verybad"
     ffmpeg_crf = 35 
-    output_res = 360
+    output_res = 480
     subtitle_model = "tiny.en"
     gpt_highlighting_model = 'gpt-4o-mini'
     ffmpeg_preset = 'veryfast'
@@ -141,11 +141,14 @@ class Config():
         Config.args.cache_file = "fd_test.sav"
         Config.args.save_facial_tracks = False 
         Config.args.save_bboxes = False
-        Config.args.preset = "bad"
+        Config.args.preset = "mid"
         Config.args.use_profiler = True
 
     def init_preset(preset):
         
+        if preset == "none":
+            return 
+
         if preset not in [pset.name for pset in presets]:
             print(f"preset {preset} does not exist")
 
