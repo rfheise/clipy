@@ -24,10 +24,10 @@ I made it work with my custom classes and made it so it uses batched inference.
 
 class S3FDImageSet(Dataset):
 
-    def __init__(self, scenes, scale):
+    def __init__(self, clip, scale):
 
         # data loader for Scene[] input
-        self.scenes = scenes
+        self.clip = clip 
         self.scale = scale
         self.current_scene = 0
         self.counter = 0
@@ -38,25 +38,22 @@ class S3FDImageSet(Dataset):
         
     
     def __len__(self):
+
         # returns length of the clip in frames
-        l = 0
-        for scene in self.scenes:
-            l += scene.frame_duration
-        return l
+        return self.clip.get_end_frame() - self.clip.get_start_frame()
     
     def load_frames_from_disk(self):
 
         # loads all frames from disk and sets init width and height
         # assumes all width and heights are constant throughout the video
-        for scene in self.scenes:
-            for frame in scene.get_frames():
-                if self.w is None or self.h is None:
-                    self.w = frame.shape[1]
-                    self.h = frame.shape[0]
-                self.frames.append(frame)
+        for frame in self.clip.get_frames():
+            if self.w is None or self.h is None:
+                self.w = frame.get_cv2().shape[1]
+                self.h = frame.get_cv2().shape[0]
+            self.frames.append(frame)
 
     def __getitem__(self, idx):
-        return self.scale_image(self.frames[idx])
+        return self.scale_image(self.frames[idx].get_cv2())
     
     def scale_image(self, frame):
         
@@ -91,7 +88,7 @@ class S3FD():
         self.net.load_state_dict(state_dict)
         self.net.eval()
     
-    def detect_faces(self, scenes, conf_th=0.5, scales=[.5],min_face_percentage=2):
+    def detect_faces(self, clip, conf_th=0.5, scales=[.5],min_face_percentage=2):
 
         #confidence keep threshold
         self.conf_th = conf_th
@@ -99,7 +96,7 @@ class S3FD():
         #scale doesn't need to be an array
         #keeping same implementation as og talknet for the ~ vibes ~
         self.scale = scales[0]
-        dataset = S3FDImageSet(scenes, self.scale)
+        dataset = S3FDImageSet(clip, self.scale)
         self.w = dataset.w 
         self.h = dataset.h
         

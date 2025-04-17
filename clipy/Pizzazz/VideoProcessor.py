@@ -1,5 +1,5 @@
 import os 
-from ..Utilities import Logger, Helper, GhostCache, Profiler
+from ..Utilities import Logger, Helper, GhostCache, Profiler, Config,FrameOp
 import moviepy.editor as mp
 
 """
@@ -34,12 +34,17 @@ class VideoProcessor:
         #adds audio to loaded movie py frame video
         new_video.audio = audio
 
+        Logger.log(f"Saving video to: {fname}")
         #writes video to output file
+        Profiler.start("to video")
         new_video.write_videofile(fname, codec="libx264",
-                                  ffmpeg_params=["-crf", "18", "-preset", "medium"],
+                                  ffmpeg_params=["-crf", 
+                                                 str(Config.args.ffmpeg_crf),
+                                                   "-preset", Config.args.ffmpeg_preset],
                                    audio_codec="aac", logger=None)
+        Profiler.stop("to video")
 
-    def render(self, output_dir="clips"):
+    def render(self, output_dir="clips", output_size=None):
         os.makedirs(output_dir, exist_ok=True)
         Profiler.start("render")
 
@@ -50,7 +55,7 @@ class VideoProcessor:
             Logger.log(f"Rendering {outfile}")
             
             #actually crops the raw video frames and resizes them to a short
-            frames,audio = video.render()
+            frames,audio = video.render(output_size)
 
             #adds additional pizzazz specified by the user
             for pizzazz in self.pizzazz_list:
@@ -61,8 +66,8 @@ class VideoProcessor:
                               frames, audio, video.get_scenes()[0].fps)
             
             #frees frames from memory
-            video.free_frames()
+            video.destroy_buffer()
             
-            print(f"Processed video saved at: {outfile}")
+            Logger.log(f"Processed video saved at: {outfile}")
 
         Profiler.stop("render")

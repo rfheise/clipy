@@ -44,28 +44,12 @@ class Track():
     def __len__(self):
         return len(self.frames)
     
-    def load_frames(self, mode="model"):
-
-        # loads all frames in track
-        # loads all frames from scene and iterates over them
-        #scenes are small so this inefficiency is fine for now 
-        for face in self.frames:
-            for i, frame in enumerate(self.scene.get_frames(mode = mode)):
-                if face.idx == i + self.scene.frame_start:
-                    face.set_cv2(frame)
-    
-    def free_frames(self):
-
-        # frees frames from memory
-        self.scene.free_frames()
-        for face in self.frames:
-            face.clear_cv2()
-    
     def get_center_of_frames(self):
 
         # gets center of frame
         # each frame object can set it's own center for cropping purposes
-        return self.frames[0].center
+
+        return self.scene.scene_center
     
     def get_center_from_none(self):
         

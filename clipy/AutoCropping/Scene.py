@@ -54,6 +54,7 @@ class Scene():
         # right now it assumes one object per scene
         self._scene_center = (None, None)
 
+
     @property
     def frame_duration(self):
         #duration of scene in frames
@@ -111,58 +112,6 @@ class Scene():
         if timestamp.end < self.end:
             self.end = timestamp.end 
             self.frame_end = Scene.get_frame_at_timestamp(self.video_file, timestamp.end)
-    
-    def get_frames(self, start = None, end = None, mode="model"):
-        
-        #maybe the most scuffed thing about this whole project
-        #would probably make linus torvalds cry
-        #the code itself isn't "terrible" but the loading/freeing paradigm is heavily abused
-
-        # loads frames if not already loaded
-        if self.frames is None:
-            self.load_frames(mode)
-
-        #load all frames from scene if start and end frame not spcified
-        if start is None or end is None:
-            return self.frames 
-        
-        #otherwise only load specified frames
-        ret = []
-        for i,frames in enumerate(self.frames):
-            if i + self.frame_start >= start and i + self.frame_start <= end:
-                ret.append(self.frames[i])
-        return ret
-
-    def free_frames(self):
-        # frees frames from memory
-        self.frames = None    
-
-    def load_frames(self, mode = "model"):
-
-        # TODO should have global cv2 object that is managed by clip object
-        # only close when clip is done with it
-        # just change position to start of scene when loading frames
-        # would be more efficient
-
-        self.frames = []
-        #opens video with cv2 and indexes it to starting frame
-        cap = cv2.VideoCapture(self.video_file)
-        cap.set(cv2.CAP_PROP_POS_FRAMES, self.frame_start)
-
-        #loads all frames in scene
-        for i in range(self.frame_start, self.frame_end):
-            ret, frame = cap.read()
-            if not ret:
-                Logger.log_error("indexed frame not in video")
-                exit(4)
-            #if mode is model loads frames as RGB 
-            #default is BGR
-            #TODO mode should be color scheme and not use case
-            if mode == "model":
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            self.frames.append(frame)
-        #close video file
-        cap.release()
     
     def get_audio(self, start=None, end=None):
 
@@ -306,9 +255,3 @@ class Scene():
             Logger.log_error("Centers Not Set")
             exit(75)
         return self.centers[0]
-
-    def free_frames_from_tracks(self):
-        #frees frames from memory
-        self.frames = None
-        for track in self:
-            track.free_frames()

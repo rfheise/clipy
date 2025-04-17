@@ -1,5 +1,5 @@
 from .Pizzazz import Pizzazz 
-from ..Utilities import OpenAIWhisper, GhostCache, Helper
+from ..Utilities import OpenAIWhisper, GhostCache, Helper, FrameOp
 import random
 
 """
@@ -7,6 +7,25 @@ import random
 Adds subtitles to short
 
 """
+class SubtitleFrameOp(FrameOp.FrameOp):
+
+    arg_format = [FrameOp.Arg("text"), FrameOp.Arg("color"), FrameOp.Arg("scale")]
+
+    def process_frame(self, frame):
+        # basically just a wrapper for the Helper.draw_wrapped text method
+        # could optionally make a lot of these Config options
+        
+        max_width = frame.shape[1] - 20 * self.scale  # Set maximum width (with a margin)
+        font_path = './fonts/Roboto.ttf'
+        font_size = 20 * self.scale
+        
+        #get bottom corner
+        position = (int(frame.shape[1]/2), 3*int(frame.shape[0]/4))  # Starting position (x, y)
+
+        frame = Helper.draw_wrapped_text(frame, self.text, position, font_path, font_size,
+                                          self.color, max_width, self.scale, border_thickness=1)
+        return frame
+
 class SubtitleCreator(Pizzazz):
 
     def __init__(self, subgen=None, cache = GhostCache()):
@@ -51,30 +70,16 @@ class SubtitleCreator(Pizzazz):
                 
                 #I set the font size using 480p video as reference
                 #Scales font to og size
-                self.scale = frame.shape[0] / 480
+                self.scale = frame.render().shape[0] / 480
 
             frame_idx = i + frame_start 
             for subtitle in subtitles:
                 if (subtitle.timestamp.get_start_frame(fps) <= frame_idx\
                     and subtitle.timestamp.get_end_frame(fps) > frame_idx):
-                    frames[i] = self.write(frame, subtitle.text)
+                    frame.add_op(SubtitleFrameOp(text=subtitle.text, color=self.color, scale = self.scale))
+        self.scale = None
         return frames, audio
 
-    def write(self, frame, text):
-
-        # basically just a wrapper for the Helper.draw_wrapped text method
-        # could optionally make a lot of these Config options
         
-        max_width = frame.shape[1] - 20 * self.scale  # Set maximum width (with a margin)
-        font_path = './fonts/Roboto.ttf'
-        font_size = 20 * self.scale
-        
-        #get bottom corner
-        position = (int(frame.shape[1]/2), 3*int(frame.shape[0]/4))  # Starting position (x, y)
-
-        frame = Helper.draw_wrapped_text(frame, text, position, font_path, font_size,
-                                          self.color, max_width, self.scale, border_thickness=1)
-        return frame
-            
             
 

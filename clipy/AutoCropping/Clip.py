@@ -1,10 +1,11 @@
-from ..Utilities import detect_scenes, GhostCache, Logger, Timestamp
+from ..Utilities import detect_scenes, Helper, GhostCache,Profiler, Logger, Timestamp, FrameBuffer, RawFrame
 from .Scene import Scene
 import math
 import cv2 
 import numpy as np
 import moviepy.editor as mp 
-
+import os
+from ..Utilities import FrameOp
 
 """This module represents a video clip object. It is what gets returned from the AutoCropper.
 It stores of the clip metadata and the scenes in the clip. It is used to render the video clip and get the audio for the clip.
@@ -35,7 +36,7 @@ class Clip():
 
     # counter for clip id
     counter = 0
-    def __init__(self, video_file, scenes, cache=GhostCache()):
+    def __init__(self, video_file, scenes, buffer, cache=GhostCache()):
         
         self.cache = cache
 
@@ -59,10 +60,11 @@ class Clip():
         self.width = None
         self.height = None
 
-    def set_dims(self,frame):
-        # sets dimensions of the output video before rendering
-        self.width = round(frame.shape[0] * self.aspect_ratio)
-        self.height = frame.shape[0]
+        #frame buffer
+        self.buffer = buffer
+
+        #frame shape 
+        self.frame_shape = None
 
     def get_audio(self):
         # gets clip audio as movie py audio object
@@ -75,36 +77,56 @@ class Clip():
 
         return audio 
     
-    def render(self):
+    def render(self, new_size=None):
         #TODO after looking over this code with non-sleep deprived eyes
         #it's kind of bad and needs redone 
         #should have functionality of multiple "centers"
         #should handle variable aspect ratios not just binary (is 9:16 or nah)
 
         frames = []
+        if self.frame_shape is None:
+            self.frame_shape = self.buffer.get_frame(self.get_start_frame()).get_cv2().shape
         # renders all "shots in clip"
         for scene in self.scenes:
             
             #loads frames from disk
-            scene.load_frames(mode="render")
             center = scene.get_center()
             
             #keeps original aspect ratio and just resizes the frame if 
             #custom center is not detected
             keep_ratio = (center == scene.scene_center)
             
-            for frame in scene.get_frames():
-                if self.height is None or self.width is None:
-                    self.set_dims(frame)
+            for frame in self.get_frames(scene.frame_start, scene.frame_end):
+
+                #keep old size if new size is None
+                if new_size is not None:
+                    old_shape = self.frame_shape
+                    new_shape = self.resize_frame(frame, new_size)
+                    center = [*scene.get_center()]
+                    center[0] = round(center[0] * new_shape[1]/old_shape[1])
+                    center[1] = round(center[1] * new_shape[0]/old_shape[0])
+                else:
+                    new_shape = self.frame_shape
+
+                if self.width is None or self.height is None:
+                    self.width = round(new_shape[0] * self.aspect_ratio)
+                    self.height = new_shape[0]
 
                 # crops frame and adds it to list of rendered frames
-                new_frame =  self.crop_cv2(frame, center, keep_ratio)
-                frames.append(new_frame)     
+                self.crop_cv2(frame, center, keep_ratio, new_shape)
+                frames.append(frame)     
         
         #returns rendered frames and audio
         # will be combined in Video Processing step
         return frames, self.get_audio() 
     
+    def resize_frame(self, frame, new_size):
+
+        new_h = new_size
+        new_w = round(new_size * self.frame_shape[1]/self.frame_shape[0])
+        frame.add_op(FrameOp.ResizeOp(new_w, new_h))
+        return (new_h,new_w)
+
     def get_dims_from_center(self, c, width, max_val):
         
         #gets center width of clip since the height remains the same
@@ -118,21 +140,22 @@ class Clip():
         # returns start and end of crop
         return (xs, xe)
     
-    def crop_cv2(self, frame, center, keep_ratio):
+    def crop_cv2(self, frame, center, keep_ratio, new_shape):
 
         # if keep ratio of og clip is not the same
         # actually crop it 
         # otherwise resize it
         if not keep_ratio:
-            return self.actually_crop(frame, center)
+            return self.actually_crop(frame, center, new_shape)
         else:
             return self.resize_for_frame(frame)
     
-    def actually_crop(self, frame, center):
+    def actually_crop(self, frame, center, new_shape):
         
         #get start and end of crop
-        xs, xe = self.get_dims_from_center(center[0], self.width, frame.shape[1])
-        
+        xs, xe = self.get_dims_from_center(center[0], self.width, new_shape[1])
+        frame.add_op(FrameOp.CropOp(xs=xs, xe=xe, ys=None, ye=None))
+        return
         #keep height the same and return new frame
         return frame[:, xs:xe]
 
@@ -147,6 +170,8 @@ class Clip():
         Returns:
             (cv2 image): rendered new frame
         """
+        frame.add_op(FrameOp.ResizeInWindowOp(self.width, self.height))
+        return
         new_w = self.width 
         new_h = int(self.width * (frame.shape[0]/frame.shape[1]))
 
@@ -173,7 +198,9 @@ class Clip():
     
     @classmethod
     def init_from_timestamp(cls, video_file, timestamp, cache=GhostCache()):
-
+        
+        frame_dir = os.path.join(".cache","frames",f"clip-{str(Clip.counter)}")
+        fb = FrameBuffer(frame_dir=frame_dir)
         #initializes a clip from a video file & (start, end timestamp)
         scenes = detect_scenes(video_file, cache=cache)
         # get all scenes in interval
@@ -194,8 +221,9 @@ class Clip():
         clip_scenes[0].trim_scene(timestamp)
         clip_scenes[-1].trim_scene(timestamp)
 
-        # return clip
-        return cls(video_file, clip_scenes, cache)
+        ret = cls(video_file, clip_scenes, buffer=fb, cache=cache)
+        ret.initialize_raw_frames()
+        return ret
     
     def get_scenes(self):
         return self.scenes
@@ -234,16 +262,11 @@ class Clip():
         self.options["aspect_ratio"] = aspect_ratio
         for scene in self.scenes:
             scene.set_centers()
+        self.flush_buffer()
 
     def set_scenes(self, scenes):
 
         self.scenes = scenes
-    
-    def free_frames(self):
-
-        # frees clip frames from memory
-        for scene in self.scenes:
-            scene.free_frames_from_tracks()
     
     def get_total_frames(self):
 
@@ -253,3 +276,57 @@ class Clip():
             # end frame is not inclusive
             total_frames += scene.frame_end - scene.frame_start
         return total_frames
+    
+    def get_raw_frame(self, idx):
+        return self.buffer.get_frame(idx)
+    
+
+    def frame_modifier(self, func):
+        Profiler.start("clip init")
+        disp_w, disp_h, pad_x, pad_y = Helper.get_display_crop(self.video_file)
+        start_frame = self.scenes[0].frame_start 
+        end_frame = self.scenes[-1].frame_end 
+        
+        cap = cv2.VideoCapture(self.video_file)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        for i in range(start_frame, end_frame):
+            ret, frame = cap.read()
+            if not ret:
+                Logger.log_error("Error Reading Frame")
+                exit(89)
+            frame = frame[:disp_h - pad_y, :disp_w - pad_x]
+            func(self, i, frame)
+        Profiler.stop("clip init")
+
+    def reset_frames(self):
+        def func(me, i, frame):
+            raw = me.buffer.get_frame(i)
+            raw.set_cv2(frame)
+        self.frame_modifier(func)
+            
+    def initialize_raw_frames(self):
+        def func(me, i, frame):
+            me.buffer.add_frame(i, frame)
+        self.frame_modifier(func)
+        
+
+    def flush_buffer(self):
+        self.buffer.flush()
+
+
+    def get_frames(self, start=None, end=None):
+        #end frame is not inclusive
+        if start is None:
+            start = self.get_start_frame()
+        
+        if end is None:
+            end = self.get_end_frame()
+        
+        frames = []
+        for i in range(start, end):
+            frames.append(self.buffer.get_frame(i))
+        return frames
+    
+    def destroy_buffer(self):
+
+        self.buffer.clear()
