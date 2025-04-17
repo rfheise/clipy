@@ -1,4 +1,4 @@
-from ..Utilities import detect_scenes, GhostCache,Profiler, Logger, Timestamp, FrameBuffer, RawFrame
+from ..Utilities import detect_scenes, Helper, GhostCache,Profiler, Logger, Timestamp, FrameBuffer, RawFrame
 from .Scene import Scene
 import math
 import cv2 
@@ -105,6 +105,8 @@ class Clip():
                     center = [*scene.get_center()]
                     center[0] = round(center[0] * new_shape[1]/old_shape[1])
                     center[1] = round(center[1] * new_shape[0]/old_shape[0])
+                else:
+                    new_shape = self.frame_shape
 
                 if self.width is None or self.height is None:
                     self.width = round(new_shape[0] * self.aspect_ratio)
@@ -120,8 +122,8 @@ class Clip():
     
     def resize_frame(self, frame, new_size):
 
-        new_h = new_size[1]
-        new_w = round(new_size[1] * self.frame_shape[1]/self.frame_shape[0])
+        new_h = new_size
+        new_w = round(new_size * self.frame_shape[1]/self.frame_shape[0])
         frame.add_op(FrameOp.ResizeOp(new_w, new_h))
         return (new_h,new_w)
 
@@ -281,18 +283,18 @@ class Clip():
 
     def frame_modifier(self, func):
         Profiler.start("clip init")
+        disp_w, disp_h, pad_x, pad_y = Helper.get_display_crop(self.video_file)
         start_frame = self.scenes[0].frame_start 
         end_frame = self.scenes[-1].frame_end 
-
+        
         cap = cv2.VideoCapture(self.video_file)
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
         for i in range(start_frame, end_frame):
             ret, frame = cap.read()
-
             if not ret:
                 Logger.log_error("Error Reading Frame")
                 exit(89)
-
+            frame = frame[:disp_h - pad_y, :disp_w - pad_x]
             func(self, i, frame)
         Profiler.stop("clip init")
 

@@ -24,9 +24,6 @@ class VideoProcessor:
         
         #saves process frames and video to output clip
 
-        if Config.debug_mode:
-            for frame in frames:
-                frame.add_op(FrameOp.ResizeOp(270, 480))
         #saves frames to temp video file
         #basically this is kind of a hack that just loads the raw 
         #frames in to a movie editor object
@@ -41,7 +38,9 @@ class VideoProcessor:
         #writes video to output file
         Profiler.start("to video")
         new_video.write_videofile(fname, codec="libx264",
-                                  ffmpeg_params=["-crf", "18", "-preset", "medium"],
+                                  ffmpeg_params=["-crf", 
+                                                 str(Config.args.ffmpeg_crf),
+                                                   "-preset", Config.args.ffmpeg_preset],
                                    audio_codec="aac", logger=None)
         Profiler.stop("to video")
 

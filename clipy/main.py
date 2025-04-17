@@ -45,6 +45,30 @@ def main():
     intervals = highlighter.highlight_intervals()
     cache.save(cache_file)
 
+    if not Config.args.render_pipeline:
+        render_series(intervals, video_path, cache, cache_file, out_dir)
+    else:
+        render_parallel(intervals, video_path, cache, cache_file, out_dir)
+   
+
+    Profiler.stop()
+
+def render_series(intervals, video_path, cache, cache_file, out_dir):
+    
+    for i, interval in enumerate(intervals):
+        cache.clear("videos")
+        cropper = AVASD(video_path, [interval], cache=cache)
+        clips = cropper.crop()
+            # Adding pizzazz to the subtitles
+        creator = VideoProcessor(clips, cache = cache)
+
+        #add Subtitle Writer to pizzazz
+        creator.add_pizzazz(SubtitleCreator(cache=cache))
+
+        #render the output clips
+        creator.render(output_dir=out_dir, output_size=Config.args.output_res)
+
+def render_parallel(intervals, video_path, cache, cache_file, out_dir):
     # Cropping the video
     cropper = AVASD(video_path, intervals, cache=cache)
     clips = cropper.crop()
@@ -57,13 +81,8 @@ def main():
     creator.add_pizzazz(SubtitleCreator(cache=cache))
 
     #render the output clips
-    output_size = (1080,1920)
-    if Config.debug_mode:
-        output_size = (270,480)
+    output_size = Config.args.output_res
     creator.render(output_dir=out_dir, output_size=output_size)
-
-    Profiler.stop()
-    
 
 if __name__ == "__main__":#
     main()

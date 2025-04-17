@@ -60,37 +60,21 @@ def write_video(frames, output_path, fps):
     # for frame in frames:
     #     video_writer.write(frame)
     # video_writer.release()
-    if not Config.debug_mode:
-        command = [
-            'ffmpeg',
-            '-y',                # Overwrite output file if it exists.
-            '-f', 'rawvideo',    # Input format: raw video.
-            '-pix_fmt', 'bgr24', # Pixel format of the raw data.
-            '-flush_packets', str(1),
-            '-s', f'{width}x{height}', # Frame size.
-            '-r', str(fps),      # Frame rate.
-            '-i', '-',           # Input comes from standard input.
-            '-vf', f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black",
-            '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
-            '-crf', '18',         # CRF 0 for lossless quality.
-            '-preset', 'medium', # Use a slower preset for optimal compression.
-            output_path
-        ]
-    else:
-        command = [
-            'ffmpeg',
-            '-y',                # Overwrite output file if it exists.
-            '-f', 'rawvideo',    # Input format: raw video.
-            '-pix_fmt', 'bgr24', # Pixel format of the raw data.
-            '-s', f'{width}x{height}', # Frame size.
-            '-r', str(fps),      # Frame rate.
-            '-i', '-',           # Input comes from standard input.
-            '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
-            '-vf', f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black",
-            '-crf', '30',         # CRF 0 for lossless quality.
-            '-preset', 'fast', # Use a slower preset for optimal compression.
-            output_path
-        ]
+    command = [
+        'ffmpeg',
+        '-y',                # Overwrite output file if it exists.
+        '-f', 'rawvideo',    # Input format: raw video.
+        '-pix_fmt', 'bgr24', # Pixel format of the raw data.
+        '-flush_packets', str(1),
+        '-s', f'{width}x{height}', # Frame size.
+        '-r', str(fps),      # Frame rate.
+        '-i', '-',           # Input comes from standard input.
+        '-vf', f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black",
+        '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
+        '-crf', str(Config.args.ffmpeg_crf),         # CRF 0 for lossless quality.
+        '-preset', Config.args.ffmpeg_preset, # Use a slower preset for optimal compression.
+        output_path
+    ]
     
     # Open a subprocess with FFmpeg.
     # command = str(" ").join(command)
@@ -141,8 +125,8 @@ def write_video_raw(frames, output_path, fps):
         '-flush_packets', str(1),
         '-i', '-',           # Input comes from standard input.
         '-c:v', 'libx264',# Use libx264rgb for lossless RGB encoding.
-        '-crf', '30',         # CRF 0 for lossless quality.
-        '-preset', 'fast', # Use a slower preset for optimal compression.
+        '-crf', str(Config.args.ffmpeg_crf),         # CRF 0 for lossless quality.
+        '-preset', Config.args.ffmpeg_preset, # Use a slower preset for optimal compression.
         output_path
     ]
     

@@ -46,14 +46,13 @@ class TalkNetInference():
         track.rand = random.randint(0,10**8)
         
         video = self.load_frames_for_avasd(track, clip, processed_video)
-        audio = self.load_audio_for_avasd(track)
-
+        audio = self.load_audio_for_avasd(track, clip, processed_video)
         if Config.args.save_facial_tracks:
             # saves video of facial track for debugging
             self.write_out(video, track.scene.get_audio(), track.scene.fps, track, clip.id)
-        
         score = self.eval_model(video, audio, self.get_fps(processed_video))
         score = self.interp_scores(score, track, clip)
+        
         return score
     
     def interp_scores(self,scores, track,clip):
@@ -159,17 +158,17 @@ class TalkNetInference():
         allScore = np.round((np.mean(np.array(allScore), axis = 0)), 1).astype(float)
         return allScore
     
-    def load_audio_for_avasd(self, track):
+    def load_audio_for_avasd(self, track,clip, video_file):
 
 
         #start/end times of the audio in audio frames
-        start = track.frames[0].idx/track.scene.fps
-        end = (track.frames[-1].idx + 1)/track.scene.fps
+        start = (track.frames[0].idx - clip.get_start_frame())/track.scene.fps
+        end = (track.frames[-1].idx - clip.get_start_frame())/track.scene.fps
 
         # re-renders the audio to make sure it is in a wav file at 16000hz
 
-        command = ("ffmpeg -y -i %s -async 1 -ac 1 -vn -acodec pcm_s16le -ar 16000 -threads %d -ss %.3f -to %.3f %s -loglevel panic" % \
-		      (track.scene.video_file, 2, start, end, "./.cache/scene-audio.wav"))
+        command = ("ffmpeg -y -i %s -async 1 -ac 1 -vn -acodec pcm_s16le -ar 16000 -b:a 32k -threads %d -ss %.3f -to %.3f %s -loglevel panic" % \
+		      (video_file, 2, start, end, "./.cache/scene-audio.wav"))
         output = subprocess.call(command, shell=True, stdout=None)
         sample_rate, audio = wavfile.read( "./.cache/scene-audio.wav")
         
@@ -244,7 +243,7 @@ class TalkNetInference():
         
     def load_frames_for_avasd(self, track, clip, processed_video):
         
-        Profiler.start("preprocess")
+
         raw_frames = []
         start = (track.frames[0].idx - clip.get_start_frame())/track.scene.fps
         end = (track.frames[-1].idx - clip.get_start_frame())/track.scene.fps
@@ -324,6 +323,5 @@ class TalkNetInference():
             #probably for efficiency as this focuses on the lips
             raw = raw[int(112-(112/2)):int(112+(112/2)), int(112-(112/2)):int(112+(112/2))]
             raw_frames.append(raw)
-        Profiler.stop("preprocess")
         # return preprocessed frames from clip
         return np.array(raw_frames)

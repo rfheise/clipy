@@ -14,6 +14,31 @@ def to_ffmpeg_time(seconds):
     milliseconds = int(round((seconds - int(seconds)) * 1000))
     return f"{hours:02}:{minutes:02}:{scnds:02}.{milliseconds:03}"
 
+#gets actual display h,w of input video and padding
+def get_display_crop(video_path):
+    """
+    Uses ffprobe to get display vs. coded dimensions, then
+    computes how many pixels to chop off on the left/top.
+    Returns (w, h, pad_x, pad_y).
+    """
+    # ask ffprobe for width,height,coded_width,coded_height
+    cmd = [
+        'ffprobe', '-v', 'error',
+        '-select_streams', 'v:0',
+        '-show_entries', 'stream=width,height,coded_width,coded_height',
+        '-of', 'csv=p=0',
+        video_path
+    ]
+    out = subprocess.check_output(cmd).decode().strip().split(",")
+    # Expect four lines: width, height, coded_width, coded_height
+    disp_w, disp_h, coded_w, coded_h = map(int, out)
+    pad_w = coded_w - disp_w
+    pad_h = coded_h - disp_h
+    # usually split evenly
+    pad_x = pad_w
+    pad_y = pad_h 
+    return disp_w, disp_h, pad_x, pad_y
+
 def preprocess_video(video_file, out_file, start, end):
     
     start = to_ffmpeg_time(start)
@@ -46,4 +71,6 @@ def preprocess_video(video_file, out_file, start, end):
     
     return out_file
     
-    
+
+
+
