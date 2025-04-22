@@ -71,8 +71,10 @@ class ChatGPTHighlighter(SubtitleHighlighter):
     Identify {self.num_clips} segments with the MOST potential for engaging, viral-ready video clips, each approximately 45 seconds.
     Each clip should be AT MOST 60 seconds long and AT LEAST 30 seconds long.
     The segments should be interesting, funny, or engaging, and suitable for sharing on social media platforms like TikTok, Instagram, or YouTube Shorts.
+    The opening moment of each segment should hook the audience, offering an intriguing glimpse into the content while leaving certain elements unresolved, thereby piquing curiosity and encouraging viewers to continue watching.
+    As the clip progresses please try to answer the the questions posed during the hook.
     Make sure to carefully analyze the ENTIRE VIDEO before selecting the most interesting moments. 
-    For each selected segment, indicate start and end timestamps, a viral effectiveness score, and a descriptive title. Present findings in JSON format.
+    For each selected segment, indicate start and end timestamps, a viral hook score, and a descriptive title. Present findings in JSON format.
     """
 
     def highlight_subtitles(self):

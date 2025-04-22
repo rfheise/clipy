@@ -16,8 +16,8 @@ class SubtitleFrameOp(FrameOp.FrameOp):
         # could optionally make a lot of these Config options
         
         max_width = frame.shape[1] - 20 * self.scale  # Set maximum width (with a margin)
-        font_path = './fonts/Roboto.ttf'
-        font_size = 20 * self.scale
+        font_path = './fonts/Geologica-Bold.ttf'
+        font_size = 18 * self.scale
         
         #get bottom corner
         position = (int(frame.shape[1]/2), 3*int(frame.shape[0]/4))  # Starting position (x, y)
@@ -56,6 +56,7 @@ class SubtitleCreator(Pizzazz):
 
         #selects random bright color as subtitle color
         self.color = random.choice(Helper.bright_colors)
+        # self.color = Helper.Color.WHITE.value
 
         #loads subtitles
         #will pull from cache if they are cached
@@ -76,7 +77,7 @@ class SubtitleCreator(Pizzazz):
             for subtitle in subtitles:
                 if (subtitle.timestamp.get_start_frame(fps) <= frame_idx\
                     and subtitle.timestamp.get_end_frame(fps) > frame_idx):
-                    frame.add_op(SubtitleFrameOp(text=subtitle.text, color=self.color, scale = self.scale))
+                    frame.add_op(SubtitleFrameOp(text=subtitle.text.upper(), color=self.color, scale = self.scale))
         self.scale = None
         return frames, audio
 
