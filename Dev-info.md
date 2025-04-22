@@ -20,15 +20,16 @@ I want to get to a point where each section of the pipeline has several differen
     - [ ] Tweak Settings For Optimal Performance
         - [ ] TalkNet
         - [ ] S3FD
-        - [ ] ffmpeg renders
+        - [X] ffmpeg renders
         - [ ] scene detection
-        - [ ] ChatGPT system prompt
+        - [X] ChatGPT system prompt
         - [ ] subtitle generation
     - [ ] Try different subtitle presets for optimal performance
     - [ ] Try different parameters for scene-detection library
-- [ ] Clean/Comment Code
-- [ ] Remove Cosmetic Inefficiencies In Code 
-    - [ ] Make data flow top -> down rather than all over the place
+- [X] Clean/Comment Code
+- [ ] Clean/Comment Frame Buffer Code
+- [X] Remove Cosmetic Inefficiencies In Code 
+    - [X] Make data flow top -> down rather than all over the place
     - [ ] Review the code to make sure everything makes sense
 - [ ] Make sure it's usable out of the box
     - [ ] Create as a python module
@@ -38,55 +39,90 @@ I want to get to a point where each section of the pipeline has several differen
 
 ## Bug Fixes
 
+### Major
+    None
+
+### Moderate
+
 - [ ] Fix subtitle alignment using something like aeneas
+    * Consider breaking up large subtitle blocks during render
 - [ ] Make it so scene has several centers depending on main track in focus
     * this will make the cropping look a lot more natural
+
+### Minor
 - [ ] Add margin to facial cropping
     * currently it will zoom in on a speakers face if they take up a majority of the frame
+- [ ] Fix jitteriness with static speaker
+    * caused by cropping on scenes from scene detector
+    * fix by merging centers across scenes if they are within some distance threshold of each other
+
+
+### Recently Completed
+
 - [X] Fix debug mode bug that causes bboxes to be in BGR instead of RGB
-- [ ] Add resizing to rendering process this will get rid of pixelated output
+- [X] Add resizing to rendering process this will get rid of pixelated output
     * right now it is cropping then resizing but these results in unnecessary quality loss
     * should resize and then crop instead of crop and then resize
-- [ ] Use audio sample rate when calling subtitle generator
-    * Currently uses 16000HZ as hardcoded sample rate
-    * fixing this might honestly fix the subtitle alignment issue
-- [ ] Fix issue with 1080P video eating up all the ram
+- [X] Fix issue with 1080P video eating up all the ram
     * Create a raw frames object to manage raw frames
     * Have it abstract all the io
     * create a buffer with max buffer size under the hood to manage reading/writing frames to disk
 
 ## Features
 
-- [ ] tweak model inputs to work with variable framerate & audio sampling without re-rendering or re-render only needed clips
-        - [X] As a band-aid solution re-render facial tracks to appropriate frame rate & audio sampling rate rather than the whole video
-- [ ] Add Various PIZZAZZ items
-    - [ ] Background Music Based Upon Mood
-    - [ ] Speaker Diarization
-        - [ ] Use cached output from talknet with a siamese network?
-    - [ ] Anything else that would make the video more interesting
+These features are sorted by the value they provide to the project i.e. the ones that will yield the highest improvements per estimated time they will take to implement
+
+### Major
+
+- [ ] ✨Professionalism✨
+    - [ ] Unit Tests
+        - [ ] Global
+        - [ ] Content Highlighting
+        - [ ] AutoCropper
+        - [ ] Rendering/Pizzazz
+    - [ ] Github Stuff
+        - [ ] Make first beta release
+        - [ ] Implement github actions that run unit tests when a commit is pushed to main
+
+- [ ] Make AutoCropping better
+    * improve cropping for stream clips
+        * layer the streamer/content in crop window
+    * each scene will have a list of lists of centers 
+        * each center will correspond with a speaker
+        * if several speakers talk at the time considering layering them
+
 - [ ] Add a content highlighter that runs locally 
     * GPT query feels like a grift 
-- [ ] Make AutoCropping functionality more complex/adaptable to different scenes
-    * the goal is to make it work with all types of media
-        * podcasts
-        * movies
-        * tv shows
-        * live streams 
-        * etc 
-- [ ] Quality Control
-    * Something that takes the processed videos and determines whether or not they meet some kind of quality threshold
+    * current gpt performance if mediocre
+
+
+### Moderate
+
+- [ ] Background Music Based Upon Mood
+- [ ] Speaker Diarization For Subtitles
+        - [ ] Use cached output from talknet with a siamese network?
 - [ ] Auto Uploading
     * Automatically uploads a platform to a platform of your choosing
     * Should be the final step in the pipeline
     * Will implement after I'm confident in the output video quality
+- [ ] Quality Control
+    * Implement some form of quality control into the pipeline 
+    * Reject any videos that fall below quality threshold
+
+
+### Minor
 - [ ] Caching
     * Make a professional cache that saves/loads faster
     * Currently just pickles everything and makes the cache file HUGE
     * Add a save/load func to each core section of the pipeline
-- [ ] Add custom arguments to main
 - [ ] Implement Professional Logger
 - [ ] Implement Professional Config
-- [ ] Make Test Suite to run before pushing to make sure there aren't any breaking changes with a commit
+
+### Recently Added
+- [X] tweak model inputs to work with variable framerate & audio sampling without re-rendering or re-render only needed clips
+        - [X] As a band-aid solution re-render facial tracks to appropriate frame rate & audio sampling rate rather than the whole video
+- [X] Add custom arguments to main
+
 
 # The Pipeline
 
