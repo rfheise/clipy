@@ -15,7 +15,7 @@ for infile in "$input_dir"/*; do
         filename=$(basename "$infile")
        	filename="${filename%.*}"
         # Run the command with -i set to the full file path and -o set to the corresponding output file.
-        python3 -m clipy.main -i "$infile" -o "$output_dir/$filename" --preset good --use-profiler  > ./.cache/${filename}.txt
+        python3 -m clipy.main -i "$infile" -o "$output_dir/$filename" --preset verygood --use-profiler  > ./.cache/${filename}.txt
 	rm "${filename}_preprocessed.mp4"
     fi
 done
