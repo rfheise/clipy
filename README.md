@@ -7,7 +7,7 @@ Clipy takes long form content and produces several short form video clips
 
 ## Demo 
 
-[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video3.jpg)](https://www.youtube.com/watch?v=nlpSfOkrqXM)
+[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video3.jpg)](https://www.youtube.com/watch?v=apGmActAClY)
 
 [More Demos](https://www.youtube.com/channel/UCX7QM2FDjp6vTTGdy27wv4Q)
 
