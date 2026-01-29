@@ -6,8 +6,7 @@ Clipy converts long form content into BRAINROT
 Clipy takes long form content and produces several short form video clips
 
 ## Demo 
-
-[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video3.jpg)](https://youtube.com/shorts/yBgwHEgNGmw?si=dMmKJubEb-pRLaSR)
+[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video4.jpg)](https://youtube.com/shorts/5qoxDyKJDy0)
 
 [More Demos](https://www.youtube.com/channel/UCX7QM2FDjp6vTTGdy27wv4Q)
 
