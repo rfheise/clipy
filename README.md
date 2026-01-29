@@ -7,10 +7,13 @@ Clipy takes long form content and produces several short form video clips
 
 ## Demo 
 
-[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video3.jpg)](https://www.youtube.com/watch?v=apGmActAClY)
+[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video3.jpg)](https://youtube.com/shorts/yBgwHEgNGmw?si=dMmKJubEb-pRLaSR)
 
 [More Demos](https://www.youtube.com/channel/UCX7QM2FDjp6vTTGdy27wv4Q)
 
+### TalkNet - Audio Visual Active Speaker Detection Demo
+
+[![Watch the Demo Video](https://api.habits.heise.ai/media/other/video1.jpg)](https://www.youtube.com/watch?v=r59jHQHsje8)
 
 
 # Installation 
